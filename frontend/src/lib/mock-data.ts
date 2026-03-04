@@ -1,4 +1,11 @@
-import type { SkillListing, PackageListing, PurchaseReceipt } from "./types";
+import type {
+  SkillListing,
+  PackageListing,
+  PurchaseReceipt,
+  SellerCap,
+  PackageSellerCap,
+  SellerVaultInfo,
+} from "./types";
 
 export const MOCK_SKILLS: SkillListing[] = [
   {
@@ -105,3 +112,18 @@ export const MOCK_CATEGORIES = [
   "Writing",
   "Design",
 ];
+
+export const MOCK_SELLER_CAPS: SellerCap[] = [
+  { id: "0xmock_seller_cap_1", skillListingId: "0xmock_skill_1" },
+  { id: "0xmock_seller_cap_3", skillListingId: "0xmock_skill_3" },
+];
+
+export const MOCK_PACKAGE_SELLER_CAPS: PackageSellerCap[] = [
+  { id: "0xmock_pkg_seller_cap_1", packageListingId: "0xmock_package_1" },
+];
+
+export const MOCK_VAULT_INFO: SellerVaultInfo = {
+  id: "0xmock_vault_1",
+  seller: "0xaa00bb11cc22dd33ee44ff5566778899aabbccdd",
+  balance: 7_000_000_000n, // 7 SUI
+};

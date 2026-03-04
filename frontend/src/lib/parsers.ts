@@ -3,6 +3,9 @@ import type {
   PackageListing,
   MarketplaceConfig,
   PurchaseReceipt,
+  SellerCap,
+  PackageSellerCap,
+  SellerVaultInfo,
 } from "./types";
 
 /**
@@ -88,4 +91,35 @@ export function parsePurchaseReceipt(
 function parseOptionString(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   return value as string;
+}
+
+export function parseSellerCap(
+  objectId: string,
+  json: Record<string, unknown>,
+): SellerCap {
+  return {
+    id: objectId,
+    skillListingId: json.skill_listing_id as string,
+  };
+}
+
+export function parsePackageSellerCap(
+  objectId: string,
+  json: Record<string, unknown>,
+): PackageSellerCap {
+  return {
+    id: objectId,
+    packageListingId: json.package_listing_id as string,
+  };
+}
+
+export function parseSellerVaultInfo(
+  objectId: string,
+  json: Record<string, unknown>,
+): SellerVaultInfo {
+  return {
+    id: objectId,
+    seller: json.seller as string,
+    balance: BigInt((json.balance as string) ?? "0"),
+  };
 }

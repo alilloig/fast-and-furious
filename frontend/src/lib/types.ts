@@ -45,3 +45,19 @@ export interface PurchaseReceipt {
   amountPaid: bigint;
   purchasedAtEpoch: number;
 }
+
+export interface SellerCap {
+  id: string;
+  skillListingId: string;
+}
+
+export interface PackageSellerCap {
+  id: string;
+  packageListingId: string;
+}
+
+export interface SellerVaultInfo {
+  id: string;
+  seller: string;
+  balance: bigint;
+}
