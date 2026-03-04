@@ -93,7 +93,7 @@ fun delist_deactivates_and_unregisters() {
     let mut listing = scenario.take_shared<SkillListing>();
     let mut registry = scenario.take_shared<ListingsRegistry>();
 
-    skill::delist(&seller_cap, &mut listing, &mut registry);
+    skill::delist(&mut listing, &seller_cap, &mut registry);
 
     assert_eq!(listing.is_active(), false);
     assert_eq!(registry.listing_count(), 0);
@@ -119,7 +119,7 @@ fun delist_with_wrong_seller_cap_fails() {
     let mut registry = scenario.take_shared<ListingsRegistry>();
 
     // Aborts here — cap's listing ID doesn't match
-    skill::delist(&fake_cap, &mut listing, &mut registry);
+    skill::delist(&mut listing, &fake_cap, &mut registry);
     abort 0
 }
 
@@ -133,8 +133,8 @@ fun delist_already_delisted_fails() {
     let mut listing = scenario.take_shared<SkillListing>();
     let mut registry = scenario.take_shared<ListingsRegistry>();
 
-    skill::delist(&seller_cap, &mut listing, &mut registry);
+    skill::delist(&mut listing, &seller_cap, &mut registry);
     // Aborts here — already delisted
-    skill::delist(&seller_cap, &mut listing, &mut registry);
+    skill::delist(&mut listing, &seller_cap, &mut registry);
     abort 0
 }

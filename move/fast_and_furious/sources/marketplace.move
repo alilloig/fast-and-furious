@@ -76,15 +76,15 @@ fun init(ctx: &mut TxContext) {
 // === Admin Functions ===
 
 /// Update the platform fee. Requires AdminCap.
-public fun update_fee(_: &AdminCap, config: &mut MarketplaceConfig, new_fee_bps: u64) {
+public fun update_fee(config: &mut MarketplaceConfig, _: &AdminCap, new_fee_bps: u64) {
     assert!(new_fee_bps <= MAX_FEE_BPS, EInvalidFeeBps);
     config.fee_bps = new_fee_bps;
 }
 
 /// Update the fee recipient address.
 public fun update_fee_recipient(
-    _: &AdminCap,
     config: &mut MarketplaceConfig,
+    _: &AdminCap,
     new_recipient: address,
 ) {
     config.fee_recipient = new_recipient;
@@ -142,20 +142,8 @@ public fun create_config_for_testing(
 }
 
 #[test_only]
-public fun destroy_config_for_testing(config: MarketplaceConfig) {
-    let MarketplaceConfig { id, .. } = config;
-    id.delete();
-}
-
-#[test_only]
 public fun create_admin_cap_for_testing(ctx: &mut TxContext): AdminCap {
     AdminCap { id: object::new(ctx) }
-}
-
-#[test_only]
-public fun destroy_admin_cap_for_testing(cap: AdminCap) {
-    let AdminCap { id } = cap;
-    id.delete();
 }
 
 #[test_only]
@@ -164,9 +152,11 @@ public fun create_package_version_for_testing(ctx: &mut TxContext): PackageVersi
 }
 
 #[test_only]
-public fun destroy_package_version_for_testing(pv: PackageVersion) {
-    let PackageVersion { id, .. } = pv;
-    id.delete();
+public fun create_package_version_with_version_for_testing(
+    version: u64,
+    ctx: &mut TxContext,
+): PackageVersion {
+    PackageVersion { id: object::new(ctx), version }
 }
 
 #[test_only]
@@ -174,8 +164,3 @@ public fun create_registry_for_testing(ctx: &mut TxContext): ListingsRegistry {
     ListingsRegistry { id: object::new(ctx), listing_count: 0 }
 }
 
-#[test_only]
-public fun destroy_registry_for_testing(registry: ListingsRegistry) {
-    let ListingsRegistry { id, .. } = registry;
-    id.delete();
-}

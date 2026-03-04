@@ -113,8 +113,8 @@ public fun create(
 /// Delist a skill. Requires SellerCap. Sets is_active = false.
 /// Removes the listing from the ListingsRegistry.
 public fun delist(
-    seller_cap: &SellerCap,
     listing: &mut SkillListing,
+    seller_cap: &SellerCap,
     registry: &mut ListingsRegistry,
 ) {
     assert!(seller_cap.skill_listing_id == object::id(listing), ENotSeller);
@@ -165,12 +165,6 @@ public fun create_for_testing(
 }
 
 #[test_only]
-public fun destroy_for_testing(listing: SkillListing) {
-    let SkillListing { id, .. } = listing;
-    id.delete();
-}
-
-#[test_only]
 public fun create_seller_cap_for_testing(
     skill_listing_id: ID,
     ctx: &mut TxContext,
@@ -181,8 +175,3 @@ public fun create_seller_cap_for_testing(
     }
 }
 
-#[test_only]
-public fun destroy_seller_cap_for_testing(cap: SellerCap) {
-    let SellerCap { id, .. } = cap;
-    id.delete();
-}
