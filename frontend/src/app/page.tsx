@@ -31,7 +31,7 @@ export default function HomePage() {
               <Link href="/explore">Browse Skills</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link href="/seller/dashboard">Start Selling</Link>
+              <Link href="/seller/dashboard">Sell Skills</Link>
             </Button>
           </div>
         </div>
