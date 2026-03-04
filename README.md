@@ -1,4 +1,7 @@
 # wooper
+A decentralized marketplace for buying and selling AI skills and agents, built on the Sui blockchain. The platform enables creators to monetize their work by listing individual skills or curated packages, while buyers can discover, filter, and purchase capabilities to extend their own workflows.
+Sellers can create and manage listings for individual skills or bundle multiple skills into packages sold as a single unit. Each listing is stored as a blob if the seller lists a single file or as a quilt if they list multiple files at a time, with sellers able to monitor their active listings, track sales performance through a personal dashboard, and remove listings at any time. To keep listings live, sellers can manually renew their blobs before expiry — or opt into auto-renewal, which triggers automatically when a skill meets a defined sales threshold, ensuring high-demand assets stay available without manual intervention. The md files for each skill or agent listed will be stored in Walrus and encrypted with Seal, so only users that buy them can access them.
+Buyers can browse the full catalog of available skills and packages, with filtering by tags to narrow results by category, use case, or capability type. Once purchased, skills and packages are accessible from a personal library, giving buyers a single view of everything they own.
 
 ## contract deployment tx effects
 
@@ -217,3 +220,4 @@ Transaction Digest: FGt7yhtULSLecAFU8bQKXNdqknfryoUFpJWqH449hui5
 │  │ Amount: -66521880                                                                              │
 │  └──                                                                                              │
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────╯
+
