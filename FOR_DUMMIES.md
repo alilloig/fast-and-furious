@@ -1,6 +1,6 @@
-# Fast & Furious — For Dummies
+# Wooper — For Dummies
 
-A plain-English guide to understanding, running, and contributing to Fast & Furious.
+A plain-English guide to understanding, running, and contributing to Wooper.
 Start here if you are new to this repository.
 
 ---
@@ -10,11 +10,15 @@ Start here if you are new to this repository.
 - [What Is This?](#what-is-this)
 - [Prerequisites](#prerequisites)
 - [Project Status](#project-status)
+- [Quick Start](#quick-start)
 - [System Architecture](#system-architecture)
 - [How It Works (The Big Picture)](#how-it-works-the-big-picture)
 - [Move Modules Explained](#move-modules-explained)
 - [Key Data Flows](#key-data-flows)
 - [Building & Testing](#building--testing)
+- [Frontend](#frontend)
+- [Configuration Reference](#configuration-reference)
+- [Key Commands](#key-commands)
 - [Glossary](#glossary)
 - [Important Files Reference](#important-files-reference)
 
@@ -22,41 +26,62 @@ Start here if you are new to this repository.
 
 ## What Is This?
 
-Fast & Furious is a decentralized marketplace for buying and selling AI skills (prompts, agents, tool configs) on the Sui blockchain. Sellers upload encrypted skill files to Walrus (decentralized storage), list them on-chain with metadata and pricing, and earn SUI from sales. Buyers discover skills, purchase them on-chain, and decrypt the content client-side using Seal encryption.
+Wooper is a decentralized marketplace for buying and selling AI skills (prompts, agents, tool configs) on the Sui blockchain. Sellers upload encrypted skill files to Walrus (decentralized storage), list them on-chain with metadata and pricing, and earn SUI from sales. Buyers discover skills, purchase them on-chain, and decrypt the content client-side using Seal encryption.
 
 The platform takes a configurable fee (in basis points) on every sale, enforced entirely by Move smart contracts. There is no backend server — the frontend talks directly to the Sui blockchain via gRPC and proxies Walrus uploads/downloads through Next.js API routes.
 
-The project is currently in **Phase 1** of a 5-phase implementation plan. The Move smart contract drafts exist, but function bodies are mostly stubs. No frontend code exists yet.
+After following this guide you will be able to build and test the Move contracts, run the frontend dev server, and understand the end-to-end data flow from listing creation to purchase and decryption.
 
 ---
 
 ## Prerequisites
 
 - **Sui CLI** — installed and on PATH (`sui` command available)
-- **Sui Move Edition 2024** — the contracts use 2024 edition syntax
-- **Node.js 18+** — for the frontend (Phase 3+)
-- **pnpm** — package manager for the frontend (Phase 3+)
-- **A Sui wallet** — for testnet deployment and testing
+- **Node.js 20+** — for the frontend
+- **npm** — ships with Node.js; used as the frontend package manager
+- **A Sui wallet** — for testnet deployment and testing (e.g., Sui Wallet browser extension)
 
 ---
 
 ## Project Status
 
-The repository contains **5 Move module drafts** in `move/`. These are design documents with struct definitions, function signatures, and partial implementations. Most function bodies are stubs (declared but empty) or contain only the access-control logic.
+The project has completed **Phases 1–2** of its 5-phase implementation plan. All Move smart contracts are fully implemented with comprehensive test suites. The frontend scaffold exists but is still at the default Next.js template stage — no marketplace UI has been built yet.
 
-**What exists:**
-- `marketplace.move` — struct definitions + working `register_listing` / `unregister_listing` functions
-- `skill.move` — struct definitions + function signatures (stubs)
-- `package_listing.move` — struct definitions + function signatures (stubs)
-- `purchase.move` — struct definitions + function signatures (stubs)
-- `seal_policy.move` — fully implemented `seal_approve` entry function
+**What is complete:**
+- All 5 Move modules are fully implemented (not stubs) and compile cleanly
+- `Move.toml` is configured for edition 2024
+- Test suites for all modules (`marketplace_tests`, `skill_tests`, `purchase_tests`, `seal_policy_tests`, `package_listing_tests`)
+- Shared `test_utils` module with test addresses and helpers
+- Build artifacts exist in `move/wooper/build/`
+
+**What exists but is scaffolded:**
+- `frontend/` — Next.js 16 project with Tailwind CSS 4, shadcn/ui components, and Sui SDK dependencies installed. The landing page is still the default Next.js template.
+- `.env.example` with placeholder object IDs
 
 **What does not exist yet:**
-- `Move.toml` — needed before `sui move build` will work
-- Frontend (`frontend/` directory)
-- Tests
+- Marketplace UI pages (explore, skill detail, purchase, seller dashboard)
+- Walrus proxy API routes (`/api/walrus/upload`, `/api/walrus/download`)
+- Seal encryption/decryption integration in the frontend
+- DAppKit provider setup in `layout.tsx`
 - Deployment scripts
-- `.env.example` or environment configuration
+- Testnet deployment (all object IDs are `0x0` placeholders)
+
+---
+
+## Quick Start
+
+```bash
+# 1. Build the Move contracts
+cd move/wooper && sui move build
+
+# 2. Run all Move tests
+sui move test
+
+# 3. Start the frontend dev server
+cd ../../frontend && npm install && npm run dev
+```
+
+After step 2, all tests should pass. After step 3, the frontend is available at `http://localhost:3000` (default Next.js template — marketplace UI is not yet built).
 
 ---
 
@@ -64,32 +89,33 @@ The repository contains **5 Move module drafts** in `move/`. These are design do
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                 FRONTEND (not yet built)                 │
-│  Next.js 14+ · Tailwind · @mysten/dapp-kit-react        │
-│  @mysten/seal · SuiGrpcClient · TanStack Query          │
-│  Next.js API Routes (Walrus upload/download proxy)       │
+│                  FRONTEND (Next.js 16)                   │
+│  Tailwind CSS 4 · @mysten/dapp-kit-react ^2.0           │
+│  @mysten/sui ^2.5 · TanStack Query ^5                   │
+│  shadcn/ui (Radix + lucide-react)                        │
+│  Next.js API Routes (Walrus proxy — not yet built)       │
 ├─────────────────────────────────────────────────────────┤
-│                 ON-CHAIN (Sui Move)                      │
-│                                                         │
-│  marketplace ─── MarketplaceConfig (shared)              │
-│               ── ListingsRegistry (shared, dynamic flds) │
-│               ── AdminCap (owned by deployer)            │
-│               ── PackageVersion (shared)                 │
-│                                                         │
-│  skill ───────── SkillListing (shared, one per skill)    │
-│               ── SellerCap (owned by seller)             │
-│                                                         │
-│  package_listing  PackageListing (shared, skill bundle)  │
-│               ── PackageSellerCap (owned by seller)      │
-│                                                         │
-│  purchase ────── PurchaseReceipt (owned NFT, buyer)      │
-│               ── SellerVault (shared, one per seller)    │
-│                                                         │
-│  seal_policy ─── seal_approve (entry fn for Seal keys)   │
-├─────────────────────────────────────────────────────────┤
-│  Walrus (encrypted blob storage)                        │
-│  Seal Key Servers (testnet: 2 servers, threshold = 2)   │
-└─────────────────────────────────────────────────────────┘
+│                  ON-CHAIN (Sui Move)                      │
+│                                                          │
+│  marketplace ─── MarketplaceConfig (shared, fee: 250bps) │
+│               ── ListingsRegistry (shared, dynamic flds)  │
+│               ── AdminCap (owned by deployer)             │
+│               ── PackageVersion (shared, v1)              │
+│                                                          │
+│  skill ───────── SkillListing (shared, one per skill)     │
+│               ── SellerCap (owned by seller)              │
+│                                                          │
+│  package_listing  PackageListing (shared, skill bundle)   │
+│               ── PackageSellerCap (owned by seller)       │
+│                                                          │
+│  purchase ────── PurchaseReceipt (owned NFT, buyer)       │
+│               ── SellerVault (shared, one per seller)     │
+│                                                          │
+│  seal_policy ─── seal_approve (entry fn for Seal keys)    │
+├──────────────────────────────────────────────────────────┤
+│  Walrus (encrypted blob storage)                         │
+│  Seal Key Servers (testnet: 2 servers, threshold = 2)    │
+└──────────────────────────────────────────────────────────┘
 ```
 
 The system has no backend. The frontend reads the blockchain directly via gRPC and proxies Walrus through thin Next.js API routes. Encryption and decryption happen entirely in the buyer's browser using Seal.
@@ -109,7 +135,7 @@ The system has no backend. The frontend reads the blockchain directly via gRPC a
 
 1. Buyer browses the `ListingsRegistry` via gRPC (paginated dynamic field enumeration)
 2. Buyer picks a skill and calls `purchase::purchase_skill` on-chain with SUI payment
-3. Payment is split: platform fee goes to `fee_recipient`, the rest goes to the seller's `SellerVault`
+3. Payment is split: platform fee (default 2.5%) goes to `fee_recipient`, the rest goes to the seller's `SellerVault`
 4. Buyer receives a `PurchaseReceipt` NFT (proof of purchase)
 
 ### Decrypting a skill
@@ -127,8 +153,8 @@ The system has no backend. The frontend reads the blockchain directly via gRPC a
 ### `marketplace.move` — The Platform Core
 
 Creates four shared/owned objects at deploy time (`init`):
-- **MarketplaceConfig** (shared) — holds `fee_bps` (platform fee in basis points) and `fee_recipient` address
-- **AdminCap** (owned) — transferred to the deployer; required to update fees
+- **MarketplaceConfig** (shared) — holds `fee_bps` (default 250 = 2.5%) and `fee_recipient` (deployer address)
+- **AdminCap** (owned) — transferred to the deployer; required to call `update_fee` and `update_fee_recipient`
 - **PackageVersion** (shared) — version gating for Seal policy (prevents stale decryption after upgrades)
 - **ListingsRegistry** (shared) — central index of all listings using dynamic fields (key = listing ID, value = tags)
 
@@ -136,28 +162,23 @@ The registry functions (`register_listing`, `unregister_listing`) are `public(pa
 
 ### `skill.move` — Individual Skill Listings
 
-Each skill becomes a shared `SkillListing` object. Listings are **immutable after creation** — there are no update functions. To change a listing, the seller delists it and creates a new one.
+Each skill becomes a shared `SkillListing` object. Listings are **immutable after creation** — there are no update functions. To change a listing, the seller delists it and creates a new one. Price must be greater than zero (in MIST).
 
-`SellerCap` is an owned object that proves the seller created a specific listing. It is required to delist.
+`SellerCap` is an owned object that proves the seller created a specific listing. It is required to delist. The cap's `skill_listing_id` is checked against the listing's object ID.
 
 ### `package_listing.move` — Bundled Skills
 
-A `PackageListing` groups multiple `SkillListing` IDs together with a discount (max 50%, stored as basis points). The price is computed from the sum of individual skill prices minus the discount.
+A `PackageListing` groups multiple `SkillListing` IDs together with a discount (max 50% = 5000 bps). The price is pre-computed by the frontend at creation time. The package also stores its own `tags` vector for registry indexing.
 
 ### `purchase.move` — Purchases & Revenue
 
 `PurchaseReceipt` is a `key`-only NFT (no `store` — cannot be placed in Kiosk). It records the buyer, seller, skills purchased, amount paid, and epoch.
 
-`SellerVault` is a shared object that accumulates a seller's revenue. One vault per seller. The seller calls `withdraw` to extract SUI.
+`SellerVault` is a shared object that accumulates a seller's revenue. One vault per seller, created via `create_vault`. The purchase functions verify that the vault's seller matches the listing's seller (`EVaultSellerMismatch`). The seller calls `withdraw` to extract SUI. Any overpayment is returned to the buyer as change.
 
 ### `seal_policy.move` — Seal Access Control
 
-The only fully implemented module. `seal_approve` is an `entry` function that Seal key servers call via `dry_run_transaction_block`. It:
-1. Checks the package version matches
-2. Extracts the first 32 bytes of the Seal key `id` as a skill listing ID
-3. Verifies that the buyer's `PurchaseReceipt` contains that skill listing ID
-
-If any check fails, the function aborts and Seal refuses to release decryption keys.
+`seal_approve` is an `entry` function that Seal key servers call via `dry_run_transaction_block`. It uses `vector::tabulate!` to extract the first 32 bytes of the Seal key ID as a skill listing ID, then checks the buyer's `PurchaseReceipt` covers that skill using `do_ref!`. If any check fails, the function aborts and Seal refuses to release decryption keys.
 
 ---
 
@@ -174,11 +195,12 @@ The frontend filters by tags client-side, then calls `multiGetObjects` to fetch 
 ### Payment Splitting
 
 When a buyer calls `purchase_skill`:
-1. The function reads `fee_bps` from `MarketplaceConfig`
-2. Computes `platform_fee = price * fee_bps / 10000`
-3. Sends `platform_fee` to `fee_recipient`
-4. Deposits the remainder into the seller's `SellerVault`
-5. Mints a `PurchaseReceipt` and transfers it to the buyer
+1. Asserts the listing is active and the vault belongs to the correct seller
+2. Reads `fee_bps` from `MarketplaceConfig` and computes `platform_fee = price * fee_bps / 10000`
+3. Splits the payment coin: sends `platform_fee` to `fee_recipient` via `transfer::public_transfer`
+4. Deposits `seller_revenue` into the seller's `SellerVault` balance
+5. Returns any change to the buyer (or destroys the zero coin)
+6. Mints a `PurchaseReceipt` and transfers it to the buyer
 
 ### Seal Key Identity Format
 
@@ -193,38 +215,115 @@ Seal automatically prepends the `package_id`. The `seal_approve` function only r
 
 ## Building & Testing
 
-> **Note:** A `Move.toml` file does not exist yet. You must create one before building.
-
-Create `move/Move.toml`:
-```toml
-[package]
-name = "fast_and_furious"
-edition = "2024"
-
-[dependencies]
-
-[addresses]
-fast_and_furious = "0x0"
-```
-
-Then:
+### Move Contracts
 
 ```bash
-# Build the Move package
-cd move && sui move build
+cd move/wooper
+
+# Build
+sui move build
 
 # Run all tests
 sui move test
 
-# Run a specific test
-sui move test --filter seal_approve
+# Run a specific test by name
+sui move test --filter creates_all_objects_on_init
 
 # Run with coverage
 sui move test --coverage
 
-# Publish to testnet (after implementation is complete)
+# Publish to testnet (after all object IDs are updated in .env)
 sui client publish --gas-budget 100000000
 ```
+
+The test suite covers:
+- **marketplace_tests** — init creates all 4 objects, admin fee updates, fee cap at 10000, registry register/unregister, duplicate and nonexistent listing errors
+- **skill_tests** — create produces listing + seller cap, zero price rejected, delist deactivates + unregisters, wrong seller cap rejected, double-delist rejected
+- **purchase_tests** — purchase flow with payment splitting, vault creation, package purchases
+- **seal_policy_tests** — seal_approve access control validation
+- **package_listing_tests** — bundle creation, discount limits, delist flow
+
+Test addresses used across all test modules (defined in `test_utils.move`):
+- `ADMIN` = `@0xAD`
+- `USER1` = `@0x01`
+- `USER2` = `@0x02`
+
+### Frontend
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Development server
+npm run dev
+
+# Production build
+npm run build
+
+# Lint
+npm run lint
+```
+
+---
+
+## Frontend
+
+The frontend is a Next.js 16 project (App Router) with Tailwind CSS 4 and shadcn/ui components. It uses `@mysten/dapp-kit-react` for wallet integration and `@mysten/sui` for blockchain communication.
+
+### Installed Dependencies
+
+| Package | Version | Purpose |
+|---|---|---|
+| `next` | 16.1.6 | React framework (App Router) |
+| `react` / `react-dom` | 19.2.3 | UI library |
+| `@mysten/dapp-kit-react` | ^2.0.0 | Sui wallet integration |
+| `@mysten/dapp-kit-core` | ^1.1.3 | Core wallet primitives |
+| `@mysten/sui` | ^2.5.1 | Sui SDK (gRPC client, transactions, BCS) |
+| `@tanstack/react-query` | ^5.90.21 | Async state management |
+| `radix-ui` | ^1.4.3 | Headless UI primitives |
+| `lucide-react` | ^0.577.0 | Icon library |
+| `tailwindcss` | ^4 | Utility-first CSS |
+| `shadcn` | ^3.8.5 (dev) | Component generator |
+
+### UI Components (shadcn/ui)
+
+Pre-installed in `src/components/ui/`: `button`, `card`, `input`, `badge`, `skeleton`, `separator`, `sheet`, `select`, `dropdown-menu`, `scroll-area`, `tooltip`, `avatar`.
+
+### Current State
+
+The layout (`layout.tsx`) uses Geist fonts but does **not** yet wrap children in `DAppKitProvider` or `QueryClientProvider`. The landing page (`page.tsx`) is the default Next.js template. Path alias `@/*` maps to `./src/*`.
+
+---
+
+## Configuration Reference
+
+### Environment Variables (`frontend/.env.example`)
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `NEXT_PUBLIC_MARKETPLACE_PACKAGE_ID` | Yes | `0x0` | Published Move package ID (set after deployment) |
+| `NEXT_PUBLIC_MARKETPLACE_CONFIG_ID` | Yes | `0x0` | MarketplaceConfig shared object ID |
+| `NEXT_PUBLIC_PACKAGE_VERSION_ID` | Yes | `0x0` | PackageVersion shared object ID |
+| `NEXT_PUBLIC_LISTINGS_REGISTRY_ID` | Yes | `0x0` | ListingsRegistry shared object ID |
+| `NEXT_PUBLIC_SUI_NETWORK` | Yes | `testnet` | Sui network (`testnet` or `mainnet`) |
+| `WALRUS_PUBLISHER_URL` | Yes | `https://publisher.walrus-testnet.walrus.space` | Walrus publisher endpoint (server-side only) |
+| `WALRUS_AGGREGATOR_URL` | Yes | `https://aggregator.walrus-testnet.walrus.space` | Walrus aggregator endpoint (server-side only) |
+
+The four `NEXT_PUBLIC_*_ID` variables are placeholders (`0x0`) until the Move package is published to testnet. After publishing, update them with the actual object IDs from the publish transaction output.
+
+---
+
+## Key Commands
+
+**`cd move/wooper && sui move build`** — Compile the Move package. Run this after any contract changes to verify they compile.
+
+**`cd move/wooper && sui move test`** — Run all Move unit tests. The test suite has tests across 5 test modules covering happy paths and error cases.
+
+**`cd frontend && npm run dev`** — Start the Next.js development server at `http://localhost:3000`.
+
+**`cd frontend && npm run build`** — Production build. Run this to verify the frontend compiles without errors.
 
 ---
 
@@ -242,6 +341,7 @@ sui client publish --gas-budget 100000000
 - **Hot potato** — A Move pattern where a struct without `drop` ability must be explicitly consumed, enforcing function call sequences.
 - **SessionKey** — A Seal concept: a temporary key signed by the wallet that avoids repeated wallet popups during a decryption session.
 - **gRPC** — The RPC protocol used to communicate with Sui full nodes. This project uses `SuiGrpcClient` exclusively (no JSON-RPC).
+- **shadcn/ui** — A component library that generates source code into your project (not an npm dependency at runtime). Components live in `src/components/ui/`.
 
 ---
 
@@ -250,8 +350,18 @@ sui client publish --gas-budget 100000000
 | File | Description |
 |---|---|
 | `CLAUDE.md` | Full project spec: architecture, module designs, data flows, security model, implementation plan |
-| `move/marketplace.move` | Platform config, admin cap, version gating, listings registry (dynamic fields) |
-| `move/skill.move` | Individual skill listing struct, create/delist functions, seller cap |
-| `move/package_listing.move` | Bundled skill packages with discount pricing |
-| `move/purchase.move` | Purchase receipts (NFT), seller vaults, payment splitting |
-| `move/seal_policy.move` | Seal access control — the only fully implemented module |
+| `move/wooper/Move.toml` | Move package manifest (edition 2024) |
+| `move/wooper/sources/marketplace.move` | Platform config, admin cap, version gating, listings registry (dynamic fields) |
+| `move/wooper/sources/skill.move` | Individual skill listing struct, create/delist functions, seller cap |
+| `move/wooper/sources/package_listing.move` | Bundled skill packages with discount pricing |
+| `move/wooper/sources/purchase.move` | Purchase receipts (NFT), seller vaults, payment splitting, vault withdrawals |
+| `move/wooper/sources/seal_policy.move` | Seal access control entry function for decryption gating |
+| `move/wooper/sources/test_utils.move` | Shared test addresses (ADMIN, USER1, USER2) and scenario helpers |
+| `move/wooper/sources/*_tests.move` | Test suites for each module (5 files) |
+| `frontend/package.json` | Frontend dependencies and scripts |
+| `frontend/.env.example` | Environment variable template with Sui object IDs and Walrus endpoints |
+| `frontend/src/app/layout.tsx` | Root layout (Geist fonts, no providers yet) |
+| `frontend/src/app/page.tsx` | Landing page (default Next.js template) |
+| `frontend/src/components/ui/` | Pre-installed shadcn/ui components (button, card, input, badge, etc.) |
+| `frontend/src/lib/utils.ts` | `cn()` utility for Tailwind class merging |
+| `.gitignore` | Ignores `move/wooper/build` |

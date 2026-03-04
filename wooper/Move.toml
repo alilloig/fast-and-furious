@@ -1,0 +1,3 @@
+[package]
+name = "wooper"
+edition = "2024"
