@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useCurrentAccount } from "@mysten/dapp-kit-react";
 import { ConnectButton } from "@mysten/dapp-kit-react/ui";
@@ -11,9 +12,11 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PriceDisplay } from "@/components/skills/price-display";
 import { WalrusScanLink } from "@/components/walrus-scan-link";
+import { DecryptButton } from "@/components/purchases/decrypt-button";
 import { useSkillDetail } from "@/hooks/use-skill-detail";
 import { useSellerVault } from "@/hooks/use-seller-vault";
 import { usePurchaseSkill } from "@/hooks/use-purchase-skill";
+import { usePurchaseReceipts } from "@/hooks/use-purchase-receipts";
 import { truncateAddress, formatSui } from "@/lib/utils";
 
 export default function SkillDetailPage({
@@ -26,7 +29,11 @@ export default function SkillDetailPage({
   const { data: skill, isLoading } = useSkillDetail(id);
   const { data: vaultId, isLoading: vaultLoading } = useSellerVault(skill?.seller);
   const purchaseMutation = usePurchaseSkill();
+  const { data: receipts } = usePurchaseReceipts();
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+
+  const owningReceipt = receipts?.find((r) => r.skillIds.includes(id));
+  const alreadyPurchased = !!owningReceipt;
 
   if (isLoading) {
     return (
@@ -95,13 +102,23 @@ export default function SkillDetailPage({
 
           <Separator />
 
-          {purchaseSuccess ? (
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-green-600">
-                Purchase successful!
-              </p>
-              <Button asChild variant="outline" size="sm">
-                <Link href="/purchases">View My Purchases</Link>
+          {alreadyPurchased || purchaseSuccess ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-green-600">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span className="text-sm font-medium">
+                  {purchaseSuccess ? "Purchase successful!" : "You own this skill"}
+                </span>
+              </div>
+              {owningReceipt && (
+                <DecryptButton
+                  receiptId={owningReceipt.id}
+                  walrusBlobId={skill!.walrusBlobId}
+                  skillTitle={skill!.title}
+                />
+              )}
+              <Button asChild variant="ghost" size="sm" className="h-auto p-0 text-sm text-muted-foreground hover:text-foreground">
+                <Link href="/purchases">Go to My Purchases →</Link>
               </Button>
             </div>
           ) : !account ? (

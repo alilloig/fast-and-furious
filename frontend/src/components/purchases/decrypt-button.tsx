@@ -75,7 +75,7 @@ export function DecryptButton({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${skillTitle.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.txt`;
+      a.download = `${skillTitle.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.md`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
