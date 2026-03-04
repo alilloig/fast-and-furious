@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PriceDisplay } from "@/components/skills/price-display";
+import { WalrusScanLink } from "@/components/walrus-scan-link";
 import { useSkillDetail } from "@/hooks/use-skill-detail";
 import { useSellerVault } from "@/hooks/use-seller-vault";
 import { usePurchaseSkill } from "@/hooks/use-purchase-skill";
@@ -88,7 +89,7 @@ export default function SkillDetailPage({
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Walrus Blob</div>
-              <div className="truncate font-mono text-sm">{skill.walrusBlobId}</div>
+              <WalrusScanLink blobId={skill.walrusBlobId} />
             </div>
           </div>
 
