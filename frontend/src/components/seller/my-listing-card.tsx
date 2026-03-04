@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PriceDisplay } from "@/components/skills/price-display";
+import { WalrusScanLink } from "@/components/walrus-scan-link";
 import { ErrorAlert } from "@/components/error-alert";
 import { useDelistSkill } from "@/hooks/use-delist-skill";
 import type { MyListing } from "@/hooks/use-my-listings";
@@ -38,10 +39,14 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pb-3">
+      <CardContent className="pb-3 space-y-2">
         <p className="line-clamp-2 text-sm text-muted-foreground">
           {listing.description}
         </p>
+        <div>
+          <div className="text-xs text-muted-foreground mb-0.5">Walrus Blob</div>
+          <WalrusScanLink blobId={listing.walrusBlobId} />
+        </div>
       </CardContent>
       <CardFooter className="flex items-center justify-between">
         <PriceDisplay price={listing.price} className="font-semibold" />

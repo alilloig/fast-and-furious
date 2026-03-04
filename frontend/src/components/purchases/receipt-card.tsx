@@ -7,6 +7,7 @@ import { PriceDisplay } from "@/components/skills/price-display";
 import { DecryptButton } from "./decrypt-button";
 import type { PurchaseReceipt, SkillListing } from "@/lib/types";
 import { truncateAddress } from "@/lib/utils";
+import { WalrusScanLink } from "@/components/walrus-scan-link";
 
 interface ReceiptCardProps {
   receipt: PurchaseReceipt;
@@ -38,12 +39,15 @@ export function ReceiptCard({ receipt, skills }: ReceiptCardProps) {
               >
                 <div className="min-w-0 flex-1">
                   {skill ? (
-                    <Link
-                      href={`/skill/${skillId}`}
-                      className="font-medium hover:underline"
-                    >
-                      {skill.title}
-                    </Link>
+                    <div className="space-y-1">
+                      <Link
+                        href={`/skill/${skillId}`}
+                        className="font-medium hover:underline"
+                      >
+                        {skill.title}
+                      </Link>
+                      <WalrusScanLink blobId={skill.walrusBlobId} />
+                    </div>
                   ) : (
                     <span className="font-mono text-sm text-muted-foreground">
                       {truncateAddress(skillId, 8)}
