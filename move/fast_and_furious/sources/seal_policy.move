@@ -38,7 +38,7 @@ entry fun seal_approve(
     let requested_skill_id = object::id_from_bytes(prefix);
 
     // 3. Check that the receipt covers this skill
-    let skill_ids = receipt.receipt_skill_ids();
+    let skill_ids = receipt.skill_ids();
     let mut found = false;
     skill_ids.do_ref!(|sid| if (*sid == requested_skill_id) { found = true });
     assert!(found, ENoAccess);
