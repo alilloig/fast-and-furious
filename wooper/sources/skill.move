@@ -13,6 +13,11 @@ const EWrongVersion: u64 = 202;
 const EAlreadyDelisted: u64 = 203;
 const EAlreadyFinalized: u64 = 204;
 const ENotFinalized: u64 = 205;
+const EFileNamesRequired: u64 = 206;
+const EMaxFilesExceeded: u64 = 207;
+
+// === Constants ===
+const MAX_FILES: u64 = 10;
 
 // === Structs ===
 
@@ -28,6 +33,7 @@ public struct SkillListing has key {
     tags: vector<String>,
     walrus_blob_id: String,
     walrus_quilt_id: Option<String>,
+    file_names: vector<String>,
     seal_key_id: vector<u8>,
     created_at_epoch: u64,
     is_active: bool,
@@ -85,6 +91,7 @@ public fun create(
         tags,
         walrus_blob_id: b"".to_string(),
         walrus_quilt_id: option::none(),
+        file_names: vector[],
         seal_key_id: vector[],
         created_at_epoch: ctx.epoch(),
         is_active: false,
@@ -110,13 +117,17 @@ public fun finalize(
     registry: &mut ListingsRegistry,
     walrus_blob_id: String,
     walrus_quilt_id: Option<String>,
+    file_names: vector<String>,
     seal_key_id: vector<u8>,
 ) {
     assert!(seller_cap.skill_listing_id == object::id(listing), ENotSeller);
     assert!(!listing.is_finalized, EAlreadyFinalized);
+    assert!(!file_names.is_empty(), EFileNamesRequired);
+    assert!(file_names.length() <= MAX_FILES, EMaxFilesExceeded);
 
     listing.walrus_blob_id = walrus_blob_id;
     listing.walrus_quilt_id = walrus_quilt_id;
+    listing.file_names = file_names;
     listing.seal_key_id = seal_key_id;
     listing.is_finalized = true;
     listing.is_active = true;
@@ -163,6 +174,7 @@ public fun is_active(listing: &SkillListing): bool { listing.is_active }
 public fun is_finalized(listing: &SkillListing): bool { listing.is_finalized }
 public fun seal_key_id(listing: &SkillListing): vector<u8> { listing.seal_key_id }
 public fun title(listing: &SkillListing): String { listing.title }
+public fun file_names(listing: &SkillListing): vector<String> { listing.file_names }
 public fun skill_listing_id(cap: &SellerCap): ID { cap.skill_listing_id }
 
 // === Test-Only Functions ===
@@ -185,6 +197,7 @@ public fun create_for_testing(
         tags: vector[b"test".to_string()],
         walrus_blob_id: b"blob123".to_string(),
         walrus_quilt_id: option::none(),
+        file_names: vector[b"test_file.txt".to_string()],
         seal_key_id: vector[0u8, 1, 2, 3],
         created_at_epoch: 0,
         is_active: true,

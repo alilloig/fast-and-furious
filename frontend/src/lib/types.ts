@@ -8,6 +8,7 @@ export interface SkillListing {
   tags: string[];
   walrusBlobId: string;
   walrusQuiltId: string | null;
+  fileNames: string[];
   sealKeyId: string;
   createdAtEpoch: number;
   isActive: boolean;

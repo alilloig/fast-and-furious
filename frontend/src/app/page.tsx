@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SkillCard } from "@/components/skills/skill-card";
@@ -19,6 +20,16 @@ export default function HomePage() {
       {/* Hero */}
       <section className="border-b py-20 md:py-28">
         <div className="container mx-auto px-4 text-center">
+          <div className="mx-auto mb-6 w-32 md:w-40 animate-[bounce_3s_ease-in-out_infinite] drop-shadow-[0_0_25px_rgba(96,165,250,0.4)]">
+            <Image
+              src="/wooper.png"
+              alt="Wooper mascot"
+              width={160}
+              height={160}
+              priority
+              className="rounded-2xl"
+            />
+          </div>
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
             AI Skills Marketplace
           </h1>

@@ -1,5 +1,9 @@
 # Wooper
 
+<p align="center">
+  <img src="wooper.png" alt="Wooper mascot" width="200" />
+</p>
+
 A decentralized marketplace for buying and selling AI skills and agents, built on the Sui blockchain. The platform enables creators to monetize their work by listing individual skills or curated packages, while buyers can discover, filter, and purchase capabilities to extend their own workflows.
 
 Sellers encrypt skill files with Seal and store them on Walrus. Buyers purchase on-chain and decrypt client-side. The platform takes a configurable fee enforced entirely by Move smart contracts — no backend server.

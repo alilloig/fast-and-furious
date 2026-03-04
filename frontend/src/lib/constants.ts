@@ -39,3 +39,11 @@ export const PURCHASE_RECEIPT_TYPE = `${MARKETPLACE_PACKAGE_ID}::purchase::Purch
 export const SELLER_VAULT_TYPE = `${MARKETPLACE_PACKAGE_ID}::purchase::SellerVault`;
 export const SELLER_CAP_TYPE = `${MARKETPLACE_PACKAGE_ID}::skill::SellerCap`;
 export const PACKAGE_SELLER_CAP_TYPE = `${MARKETPLACE_PACKAGE_ID}::package_listing::PackageSellerCap`;
+
+export const MAX_FILES_PER_LISTING = 10;
+export const MAX_TOTAL_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
+export const ALLOWED_FILE_EXTENSIONS = [
+  ".txt", ".md", ".json", ".yaml", ".yml", ".toml",
+  ".js", ".ts", ".py", ".sh", ".xml", ".csv",
+  ".prompt", ".agent", ".config",
+];
