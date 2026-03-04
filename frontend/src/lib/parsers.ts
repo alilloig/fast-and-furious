@@ -26,6 +26,7 @@ export function parseSkillListing(
     tags: json.tags as string[],
     walrusBlobId: json.walrus_blob_id as string,
     walrusQuiltId: parseOptionString(json.walrus_quilt_id),
+    fileNames: (json.file_names as string[]) ?? [],
     sealKeyId: json.seal_key_id as string,
     createdAtEpoch: Number(json.created_at_epoch as string),
     isActive: json.is_active as boolean,

@@ -37,6 +37,7 @@ fun setup_and_create_listing(scenario: &mut ts::Scenario) {
         &mut registry,
         b"blob_abc123".to_string(),
         option::none(),
+        vector[b"skill_file.txt".to_string()],
         vector[0u8, 1, 2, 3, 4],
     );
 
@@ -211,6 +212,7 @@ fun finalize_activates_and_registers() {
         &mut registry,
         b"blob_finalized".to_string(),
         option::none(),
+        vector[b"prompt.md".to_string()],
         vector[0u8, 1, 2, 3, 4],
     );
 
@@ -241,6 +243,7 @@ fun finalize_already_finalized_fails() {
         &mut registry,
         b"blob_dup".to_string(),
         option::none(),
+        vector[b"file.txt".to_string()],
         vector[0u8],
     );
     abort 0
@@ -281,7 +284,138 @@ fun finalize_wrong_seller_cap_fails() {
         &mut registry,
         b"blob_bad".to_string(),
         option::none(),
+        vector[b"file.txt".to_string()],
         vector[0u8],
     );
     abort 0
+}
+
+// === file_names validation tests ===
+
+#[test, expected_failure(abort_code = 206, location = wooper::skill)]
+fun finalize_with_empty_file_names_fails() {
+    let mut scenario = test_utils::begin();
+    marketplace::init_for_testing(scenario.ctx());
+    scenario.next_tx(test_utils::user1());
+
+    let config = scenario.take_shared<MarketplaceConfig>();
+    skill::create(
+        &config,
+        b"No Files Skill".to_string(),
+        b"desc".to_string(),
+        1_000_000_000,
+        b"prompts".to_string(),
+        vector[b"ai".to_string()],
+        scenario.ctx(),
+    );
+    ts::return_shared(config);
+
+    scenario.next_tx(test_utils::user1());
+
+    let seller_cap = scenario.take_from_sender<SellerCap>();
+    let mut listing = scenario.take_shared<SkillListing>();
+    let mut registry = scenario.take_shared<ListingsRegistry>();
+
+    // Aborts — empty file_names
+    skill::finalize(
+        &seller_cap,
+        &mut listing,
+        &mut registry,
+        b"blob_x".to_string(),
+        option::none(),
+        vector[],
+        vector[0u8],
+    );
+    abort 0
+}
+
+#[test, expected_failure(abort_code = 207, location = wooper::skill)]
+fun finalize_with_too_many_files_fails() {
+    let mut scenario = test_utils::begin();
+    marketplace::init_for_testing(scenario.ctx());
+    scenario.next_tx(test_utils::user1());
+
+    let config = scenario.take_shared<MarketplaceConfig>();
+    skill::create(
+        &config,
+        b"Too Many Files".to_string(),
+        b"desc".to_string(),
+        1_000_000_000,
+        b"prompts".to_string(),
+        vector[b"ai".to_string()],
+        scenario.ctx(),
+    );
+    ts::return_shared(config);
+
+    scenario.next_tx(test_utils::user1());
+
+    let seller_cap = scenario.take_from_sender<SellerCap>();
+    let mut listing = scenario.take_shared<SkillListing>();
+    let mut registry = scenario.take_shared<ListingsRegistry>();
+
+    // 11 file names — exceeds MAX_FILES (10)
+    skill::finalize(
+        &seller_cap,
+        &mut listing,
+        &mut registry,
+        b"blob_x".to_string(),
+        option::none(),
+        vector[
+            b"f1.txt".to_string(), b"f2.txt".to_string(), b"f3.txt".to_string(),
+            b"f4.txt".to_string(), b"f5.txt".to_string(), b"f6.txt".to_string(),
+            b"f7.txt".to_string(), b"f8.txt".to_string(), b"f9.txt".to_string(),
+            b"f10.txt".to_string(), b"f11.txt".to_string(),
+        ],
+        vector[0u8],
+    );
+    abort 0
+}
+
+#[test]
+fun finalize_with_multiple_files_succeeds() {
+    let mut scenario = test_utils::begin();
+    marketplace::init_for_testing(scenario.ctx());
+    scenario.next_tx(test_utils::user1());
+
+    let config = scenario.take_shared<MarketplaceConfig>();
+    skill::create(
+        &config,
+        b"Multi-File Skill".to_string(),
+        b"Has three files".to_string(),
+        2_000_000_000,
+        b"agents".to_string(),
+        vector[b"agent".to_string()],
+        scenario.ctx(),
+    );
+    ts::return_shared(config);
+
+    scenario.next_tx(test_utils::user1());
+
+    let seller_cap = scenario.take_from_sender<SellerCap>();
+    let mut listing = scenario.take_shared<SkillListing>();
+    let mut registry = scenario.take_shared<ListingsRegistry>();
+
+    skill::finalize(
+        &seller_cap,
+        &mut listing,
+        &mut registry,
+        b"blob_multi".to_string(),
+        option::some(b"quilt_abc".to_string()),
+        vector[
+            b"agent.md".to_string(),
+            b"config.yaml".to_string(),
+            b"rules.json".to_string(),
+        ],
+        vector[0u8, 1, 2, 3, 4],
+    );
+
+    assert_eq!(listing.is_active(), true);
+    assert_eq!(listing.is_finalized(), true);
+    assert_eq!(listing.file_names().length(), 3);
+    assert_eq!(registry.listing_count(), 1);
+
+    scenario.return_to_sender(seller_cap);
+    ts::return_shared(listing);
+    ts::return_shared(registry);
+    scenario.end();
 }

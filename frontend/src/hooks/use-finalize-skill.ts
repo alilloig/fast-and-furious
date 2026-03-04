@@ -13,6 +13,7 @@ interface FinalizeSkillArgs {
   listingId: string;
   walrusBlobId: string;
   walrusQuiltId: string | null;
+  fileNames: string[];
   sealKeyId: number[];
 }
 
@@ -36,6 +37,7 @@ export function useFinalizeSkill() {
           tx.object(LISTINGS_REGISTRY_ID),
           tx.pure.string(args.walrusBlobId),
           tx.pure.option("string", args.walrusQuiltId),
+          tx.pure.vector("string", args.fileNames),
           tx.pure.vector("u8", args.sealKeyId),
         ],
       });

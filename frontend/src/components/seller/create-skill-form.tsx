@@ -25,6 +25,9 @@ import {
   MIST_PER_SUI,
   MARKETPLACE_PACKAGE_ID,
   SEAL_THRESHOLD,
+  MAX_FILES_PER_LISTING,
+  MAX_TOTAL_FILE_SIZE_BYTES,
+  ALLOWED_FILE_EXTENSIONS,
 } from "@/lib/constants";
 
 type Step =
@@ -34,15 +37,6 @@ type Step =
   | "uploading"
   | "finalizing"
   | "done";
-
-const STEP_LABELS: Record<Step, string> = {
-  form: "Fill in details",
-  creating: "Creating listing on-chain...",
-  encrypting: "Encrypting content with Seal...",
-  uploading: "Uploading to Walrus...",
-  finalizing: "Finalizing listing...",
-  done: "Done!",
-};
 
 /**
  * Build a Seal key identity from a listing ID.
@@ -96,6 +90,29 @@ function extractCreatedObjectIds(effects: {
   return { listingId, sellerCapId };
 }
 
+function validateFiles(files: File[]): string | null {
+  if (files.length === 0) return "Please select at least one file.";
+  if (files.length > MAX_FILES_PER_LISTING)
+    return `Maximum ${MAX_FILES_PER_LISTING} files allowed.`;
+  const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+  if (totalSize > MAX_TOTAL_FILE_SIZE_BYTES)
+    return "Total file size exceeds 50MB.";
+  for (const f of files) {
+    const ext = f.name.includes(".")
+      ? `.${f.name.split(".").pop()!.toLowerCase()}`
+      : "";
+    if (!ALLOWED_FILE_EXTENSIONS.includes(ext))
+      return `File type "${ext || "(no extension)"}" is not allowed.`;
+  }
+  return null;
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function CreateSkillForm() {
   const router = useRouter();
   const createSkillMutation = useCreateSkill();
@@ -107,9 +124,10 @@ export function CreateSkillForm() {
   const [priceStr, setPriceStr] = useState("");
   const [category, setCategory] = useState("");
   const [tagsStr, setTagsStr] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
 
   const [step, setStep] = useState<Step>("form");
+  const [stepDetail, setStepDetail] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -118,8 +136,10 @@ export function CreateSkillForm() {
 
     const priceSui = parseFloat(priceStr);
     if (isNaN(priceSui) || priceSui <= 0) return;
-    if (!file) {
-      setError("Please select a skill file to upload.");
+
+    const validationError = validateFiles(files);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -132,6 +152,7 @@ export function CreateSkillForm() {
     try {
       // Step 1: Create listing on-chain (metadata only — gets us the listing ID)
       setStep("creating");
+      setStepDetail("Creating listing on-chain...");
       const createResult = await createSkillMutation.mutateAsync({
         title,
         description,
@@ -151,46 +172,96 @@ export function CreateSkillForm() {
 
       const { listingId, sellerCapId } = extractCreatedObjectIds(effects);
 
-      // Step 2: Encrypt file content with Seal using the listing ID
+      // Step 2: Encrypt each file with Seal using the same identity
       setStep("encrypting");
-      const fileBytes = new Uint8Array(await file.arrayBuffer());
       const { id: sealId, sealKeyId } = buildSealIdentity(listingId);
-
       const sealClient = getSealClient(suiClient);
-      const { encryptedObject } = await sealClient.encrypt({
-        threshold: SEAL_THRESHOLD,
-        packageId: MARKETPLACE_PACKAGE_ID,
-        id: sealId,
-        data: fileBytes,
-      });
+
+      const encryptedFiles: Array<{ name: string; data: Uint8Array }> = [];
+      for (let i = 0; i < files.length; i++) {
+        setStepDetail(`Encrypting file ${i + 1} of ${files.length}...`);
+        const fileBytes = new Uint8Array(await files[i].arrayBuffer());
+        const { encryptedObject } = await sealClient.encrypt({
+          threshold: SEAL_THRESHOLD,
+          packageId: MARKETPLACE_PACKAGE_ID,
+          id: sealId,
+          data: fileBytes,
+        });
+        encryptedFiles.push({ name: files[i].name, data: encryptedObject });
+      }
 
       // Step 3: Upload encrypted bytes to Walrus
       setStep("uploading");
-      const uploadResponse = await fetch("/api/walrus/upload", {
-        method: "POST",
-        body: encryptedObject,
-        headers: { "Content-Type": "application/octet-stream" },
-      });
-      if (!uploadResponse.ok) {
-        throw new Error(
-          `Walrus upload failed: ${uploadResponse.statusText}`,
-        );
-      }
-      const uploadResult = await uploadResponse.json();
-      const walrusBlobId =
-        uploadResult.newlyCreated?.blobObject?.blobId ??
-        uploadResult.alreadyCertified?.blobId;
-      if (!walrusBlobId) {
-        throw new Error("No blob ID returned from Walrus");
+      let walrusBlobId: string;
+      let walrusQuiltId: string | null = null;
+
+      if (encryptedFiles.length === 1) {
+        // Single file — use existing blob upload
+        setStepDetail("Uploading file to Walrus...");
+        const uploadResponse = await fetch("/api/walrus/upload", {
+          method: "POST",
+          body: encryptedFiles[0].data as BodyInit,
+          headers: { "Content-Type": "application/octet-stream" },
+        });
+        if (!uploadResponse.ok) {
+          throw new Error(
+            `Walrus upload failed: ${uploadResponse.statusText}`,
+          );
+        }
+        const uploadResult = await uploadResponse.json();
+        walrusBlobId =
+          uploadResult.newlyCreated?.blobObject?.blobId ??
+          uploadResult.alreadyCertified?.blobId;
+        if (!walrusBlobId) {
+          throw new Error("No blob ID returned from Walrus");
+        }
+      } else {
+        // Multiple files — use quilt upload
+        setStepDetail(`Uploading ${encryptedFiles.length} files to Walrus...`);
+        const formData = new FormData();
+        for (const ef of encryptedFiles) {
+          formData.append(
+            ef.name,
+            new Blob([ef.data as BlobPart], { type: "application/octet-stream" }),
+            ef.name,
+          );
+        }
+
+        const uploadResponse = await fetch("/api/walrus/upload-quilt", {
+          method: "POST",
+          body: formData,
+        });
+        if (!uploadResponse.ok) {
+          throw new Error(
+            `Walrus upload failed: ${uploadResponse.statusText}`,
+          );
+        }
+        const quiltResult = await uploadResponse.json();
+
+        // Walrus quilt API wraps the blob store result under `blobStoreResult`
+        const blobStore = quiltResult.blobStoreResult;
+        walrusBlobId =
+          blobStore?.newlyCreated?.blobObject?.blobId ??
+          blobStore?.alreadyCertified?.blobId ??
+          "";
+
+        // The quilt ID IS the blobId (Walrus docs: "the quilt ID (blobId)")
+        walrusQuiltId = walrusBlobId || null;
+
+        if (!walrusQuiltId) {
+          throw new Error("No file ID returned from Walrus");
+        }
       }
 
       // Step 4: Finalize listing on-chain (store walrus/seal data, activate, register)
       setStep("finalizing");
+      setStepDetail("Finalizing listing...");
       await finalizeMutation.mutateAsync({
         sellerCapId,
         listingId,
         walrusBlobId,
-        walrusQuiltId: null,
+        walrusQuiltId,
+        fileNames: files.map((f) => f.name),
         sealKeyId,
       });
 
@@ -198,7 +269,6 @@ export function CreateSkillForm() {
       router.push("/seller/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
-      // Reset to form so the user can retry
       if (step !== "form") setStep("form");
     }
   };
@@ -213,7 +283,7 @@ export function CreateSkillForm() {
       <CardContent>
         {isPending && (
           <div className="mb-4 rounded-md bg-muted p-3 text-sm">
-            {STEP_LABELS[step]}
+            {stepDetail}
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -292,26 +362,45 @@ export function CreateSkillForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="file">Skill File</Label>
+            <Label htmlFor="file">Skill Files</Label>
             <Input
               id="file"
               type="file"
               required
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              multiple
+              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
               disabled={isPending}
             />
+            {files.length > 0 && (
+              <div className="space-y-1 rounded-md border p-2">
+                {files.map((f, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between text-xs"
+                  >
+                    <span className="truncate font-mono">{f.name}</span>
+                    <span className="ml-2 shrink-0 text-muted-foreground">
+                      {formatFileSize(f.size)}
+                    </span>
+                  </div>
+                ))}
+                <div className="border-t pt-1 text-xs text-muted-foreground">
+                  {files.length} file{files.length !== 1 ? "s" : ""},{" "}
+                  {formatFileSize(files.reduce((s, f) => s + f.size, 0))} total
+                </div>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
-              Your file will be encrypted with Seal before upload. Only buyers
-              with a valid purchase receipt can decrypt it.
+              Upload up to {MAX_FILES_PER_LISTING} files (50MB total). Files
+              are encrypted with Seal before upload. Only buyers with a valid
+              purchase receipt can decrypt them.
             </p>
           </div>
 
-          <ErrorAlert
-            error={error ? new Error(error) : null}
-          />
+          <ErrorAlert error={error ? new Error(error) : null} />
 
           <Button type="submit" disabled={isPending || !category}>
-            {isPending ? STEP_LABELS[step] : "Create Listing"}
+            {isPending ? stepDetail : "Create Listing"}
           </Button>
         </form>
       </CardContent>

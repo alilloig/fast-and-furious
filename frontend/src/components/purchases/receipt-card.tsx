@@ -58,6 +58,8 @@ export function ReceiptCard({ receipt, skills }: ReceiptCardProps) {
                   <DecryptButton
                     receiptId={receipt.id}
                     walrusBlobId={skill.walrusBlobId}
+                    walrusQuiltId={skill.walrusQuiltId}
+                    fileNames={skill.fileNames}
                     skillTitle={skill.title}
                   />
                 )}

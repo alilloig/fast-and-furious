@@ -79,6 +79,27 @@ export default function SkillDetailPage({
             ))}
           </div>
 
+          {skill.fileNames.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <div className="mb-2 text-sm font-medium">
+                  Files Included ({skill.fileNames.length})
+                </div>
+                <div className="space-y-1">
+                  {skill.fileNames.map((name) => (
+                    <div
+                      key={name}
+                      className="rounded border px-3 py-1.5 font-mono text-sm"
+                    >
+                      {name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
           <Separator />
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -95,8 +116,8 @@ export default function SkillDetailPage({
               <div className="text-sm">{skill.createdAtEpoch}</div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">Walrus Blob</div>
-              <WalrusScanLink blobId={skill.walrusBlobId} />
+              <div className="text-sm text-muted-foreground">Storage ID</div>
+              <div className="truncate font-mono text-sm">{skill.walrusBlobId}</div>
             </div>
           </div>
 
