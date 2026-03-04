@@ -1,6 +1,6 @@
 /// Module: marketplace
 /// Platform configuration, admin controls, and the central listings registry.
-module fast_and_furious::marketplace;
+module wooper::marketplace;
 
 // === Imports ===
 use std::string::String;

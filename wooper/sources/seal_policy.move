@@ -1,10 +1,10 @@
 /// Module: seal_policy
 /// Seal access control — key servers call `seal_approve` via dry_run to verify decryption access.
-module fast_and_furious::seal_policy;
+module wooper::seal_policy;
 
 // === Imports ===
-use fast_and_furious::marketplace::PackageVersion;
-use fast_and_furious::purchase::PurchaseReceipt;
+use wooper::marketplace::PackageVersion;
+use wooper::purchase::PurchaseReceipt;
 
 // === Errors ===
 const ENoAccess: u64 = 500;

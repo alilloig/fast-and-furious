@@ -1,15 +1,15 @@
 #[test_only]
-module fast_and_furious::purchase_tests;
+module wooper::purchase_tests;
 
 use sui::test_scenario as ts;
 use sui::coin;
 use sui::sui::SUI;
 use std::unit_test::assert_eq;
-use fast_and_furious::marketplace::{Self, MarketplaceConfig, ListingsRegistry};
-use fast_and_furious::skill::{Self, SkillListing, SellerCap};
-use fast_and_furious::package_listing::{Self, PackageListing};
-use fast_and_furious::purchase::{Self, SellerVault, PurchaseReceipt};
-use fast_and_furious::test_utils;
+use wooper::marketplace::{Self, MarketplaceConfig, ListingsRegistry};
+use wooper::skill::{Self, SkillListing, SellerCap};
+use wooper::package_listing::{Self, PackageListing};
+use wooper::purchase::{Self, SellerVault, PurchaseReceipt};
+use wooper::test_utils;
 
 // === Helpers ===
 
@@ -113,7 +113,7 @@ fun fee_split_computed_correctly() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = 400, location = fast_and_furious::purchase)]
+#[test, expected_failure(abort_code = 400, location = wooper::purchase)]
 fun purchase_skill_inactive_listing_fails() {
     let mut scenario = test_utils::begin();
     setup_skill_and_vault(&mut scenario);
@@ -137,7 +137,7 @@ fun purchase_skill_inactive_listing_fails() {
     abort 0
 }
 
-#[test, expected_failure(abort_code = 401, location = fast_and_furious::purchase)]
+#[test, expected_failure(abort_code = 401, location = wooper::purchase)]
 fun purchase_skill_insufficient_payment_fails() {
     let mut scenario = test_utils::begin();
     setup_skill_and_vault(&mut scenario);
@@ -153,7 +153,7 @@ fun purchase_skill_insufficient_payment_fails() {
     abort 0
 }
 
-#[test, expected_failure(abort_code = 405, location = fast_and_furious::purchase)]
+#[test, expected_failure(abort_code = 405, location = wooper::purchase)]
 fun purchase_skill_vault_seller_mismatch_fails() {
     let mut scenario = test_utils::begin();
     setup_skill_and_vault(&mut scenario);
@@ -217,7 +217,7 @@ fun withdraw_success() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = 402, location = fast_and_furious::purchase)]
+#[test, expected_failure(abort_code = 402, location = wooper::purchase)]
 fun withdraw_not_vault_owner_fails() {
     let mut scenario = test_utils::begin();
     setup_skill_and_vault(&mut scenario);
@@ -240,7 +240,7 @@ fun withdraw_not_vault_owner_fails() {
     abort 0
 }
 
-#[test, expected_failure(abort_code = 403, location = fast_and_furious::purchase)]
+#[test, expected_failure(abort_code = 403, location = wooper::purchase)]
 fun withdraw_insufficient_balance_fails() {
     let mut scenario = test_utils::begin();
     setup_skill_and_vault(&mut scenario);

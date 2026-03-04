@@ -1,5 +1,5 @@
 #[test_only]
-module fast_and_furious::test_utils;
+module wooper::test_utils;
 
 use sui::test_scenario::{Self as ts, Scenario};
 

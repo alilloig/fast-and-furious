@@ -1,4 +1,4 @@
-# Fast & Furious — AI Skills Marketplace on Sui
+# Wooper — AI Skills Marketplace on Sui
 
 > A decentralized marketplace for buying and selling AI skills/agents on Sui, with Seal-encrypted content stored on Walrus.
 
@@ -95,13 +95,13 @@ const SEAL_THRESHOLD = 2;
 
 ## 4. Move Module Design
 
-Package name: `fast_and_furious`
+Package name: `wooper`
 Package address: `0x0` (publish-time)
 
 ### 4.1 `marketplace.move` — Platform Configuration & Listings Registry
 
 ```move
-module fast_and_furious::marketplace;
+module wooper::marketplace;
 
 // === Imports ===
 use sui::dynamic_field;
@@ -194,7 +194,7 @@ public fun listing_count(registry: &ListingsRegistry): u64;
 ### 4.2 `skill.move` — Individual Skill Listings
 
 ```move
-module fast_and_furious::skill;
+module wooper::skill;
 
 // === Errors ===
 const ENotSeller: u64 = 200;
@@ -281,7 +281,7 @@ public fun seal_key_id(listing: &SkillListing): vector<u8>;
 ### 4.3 `package_listing.move` — Bundled Skill Packages
 
 ```move
-module fast_and_furious::package_listing;
+module wooper::package_listing;
 
 // === Errors ===
 const ENotSeller: u64 = 300;
@@ -358,7 +358,7 @@ public fun is_active(listing: &PackageListing): bool;
 ### 4.4 `purchase.move` — Purchases & Revenue
 
 ```move
-module fast_and_furious::purchase;
+module wooper::purchase;
 
 // === Errors ===
 const EListingNotActive: u64 = 400;
@@ -450,7 +450,7 @@ public fun vault_balance(vault: &SellerVault): u64;
 This is the critical module that Seal key servers call via `dry_run_transaction_block` to decide whether to release decryption keys.
 
 ```move
-module fast_and_furious::seal_policy;
+module wooper::seal_policy;
 
 // === Errors ===
 const ENoAccess: u64 = 500;
@@ -1135,7 +1135,7 @@ sui move test --coverage         # with coverage report
 
 ### Move (2024 Edition)
 
-- **Module syntax:** `module fast_and_furious::name;` (no curly braces)
+- **Module syntax:** `module wooper::name;` (no curly braces)
 - **Method syntax:** `id.delete()` over `object::delete(id)`, `ctx.sender()` over `tx_context::sender(ctx)`
 - **String literals:** `b"text".to_string()` instead of `string::utf8(b"text")`
 - **Error constants:** `EPascalCase` (e.g., `ENotAuthorized`)
@@ -1162,21 +1162,21 @@ sui move test --coverage         # with coverage report
 ### Git & Project
 
 - Conventional commits: `feat:`, `fix:`, `docs:`, `test:`, `chore:`
-- Move package at `/move/fast_and_furious/`
+- Move package at `/move/wooper/`
 - Frontend at `/frontend/`
 
 ### Move.toml
 
 ```toml
 [package]
-name = "fast_and_furious"
+name = "wooper"
 edition = "2024"
 
 [dependencies]
 # DO NOT add explicit Sui dependency — auto-added for testnet/mainnet
 
 [addresses]
-fast_and_furious = "0x0"
+wooper = "0x0"
 ```
 
 ---

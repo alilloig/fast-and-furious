@@ -1,11 +1,11 @@
 #[test_only]
-module fast_and_furious::package_listing_tests;
+module wooper::package_listing_tests;
 
 use sui::test_scenario as ts;
 use std::unit_test::assert_eq;
-use fast_and_furious::marketplace::{Self, MarketplaceConfig, ListingsRegistry};
-use fast_and_furious::package_listing::{Self, PackageListing, PackageSellerCap};
-use fast_and_furious::test_utils;
+use wooper::marketplace::{Self, MarketplaceConfig, ListingsRegistry};
+use wooper::package_listing::{Self, PackageListing, PackageSellerCap};
+use wooper::test_utils;
 
 // === Helpers ===
 
@@ -60,7 +60,7 @@ fun create_produces_listing_and_cap() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = 302, location = fast_and_furious::package_listing)]
+#[test, expected_failure(abort_code = 302, location = wooper::package_listing)]
 fun create_empty_skills_fails() {
     let mut scenario = test_utils::begin();
     marketplace::init_for_testing(scenario.ctx());
@@ -80,7 +80,7 @@ fun create_empty_skills_fails() {
     abort 0
 }
 
-#[test, expected_failure(abort_code = 301, location = fast_and_furious::package_listing)]
+#[test, expected_failure(abort_code = 301, location = wooper::package_listing)]
 fun create_invalid_discount_fails() {
     let mut scenario = test_utils::begin();
     marketplace::init_for_testing(scenario.ctx());
@@ -100,7 +100,7 @@ fun create_invalid_discount_fails() {
     abort 0
 }
 
-#[test, expected_failure(abort_code = 305, location = fast_and_furious::package_listing)]
+#[test, expected_failure(abort_code = 305, location = wooper::package_listing)]
 fun create_zero_price_fails() {
     let mut scenario = test_utils::begin();
     marketplace::init_for_testing(scenario.ctx());
@@ -141,7 +141,7 @@ fun delist_deactivates_and_unregisters() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = 300, location = fast_and_furious::package_listing)]
+#[test, expected_failure(abort_code = 300, location = wooper::package_listing)]
 fun delist_wrong_cap_fails() {
     let mut scenario = test_utils::begin();
     setup_and_create_package(&mut scenario);
@@ -159,7 +159,7 @@ fun delist_wrong_cap_fails() {
     abort 0
 }
 
-#[test, expected_failure(abort_code = 304, location = fast_and_furious::package_listing)]
+#[test, expected_failure(abort_code = 304, location = wooper::package_listing)]
 fun delist_already_delisted_fails() {
     let mut scenario = test_utils::begin();
     setup_and_create_package(&mut scenario);

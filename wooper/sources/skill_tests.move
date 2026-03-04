@@ -1,11 +1,11 @@
 #[test_only]
-module fast_and_furious::skill_tests;
+module wooper::skill_tests;
 
 use sui::test_scenario as ts;
 use std::unit_test::assert_eq;
-use fast_and_furious::marketplace::{Self, MarketplaceConfig, ListingsRegistry};
-use fast_and_furious::skill::{Self, SkillListing, SellerCap};
-use fast_and_furious::test_utils;
+use wooper::marketplace::{Self, MarketplaceConfig, ListingsRegistry};
+use wooper::skill::{Self, SkillListing, SellerCap};
+use wooper::test_utils;
 
 fun setup_and_create_listing(scenario: &mut ts::Scenario) {
     marketplace::init_for_testing(scenario.ctx());
@@ -57,7 +57,7 @@ fun create_produces_listing_and_seller_cap() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = 201, location = fast_and_furious::skill)]
+#[test, expected_failure(abort_code = 201, location = wooper::skill)]
 fun create_with_zero_price_fails() {
     let mut scenario = test_utils::begin();
     marketplace::init_for_testing(scenario.ctx());
@@ -104,7 +104,7 @@ fun delist_deactivates_and_unregisters() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = 200, location = fast_and_furious::skill)]
+#[test, expected_failure(abort_code = 200, location = wooper::skill)]
 fun delist_with_wrong_seller_cap_fails() {
     let mut scenario = test_utils::begin();
     setup_and_create_listing(&mut scenario);
@@ -123,7 +123,7 @@ fun delist_with_wrong_seller_cap_fails() {
     abort 0
 }
 
-#[test, expected_failure(abort_code = 203, location = fast_and_furious::skill)]
+#[test, expected_failure(abort_code = 203, location = wooper::skill)]
 fun delist_already_delisted_fails() {
     let mut scenario = test_utils::begin();
     setup_and_create_listing(&mut scenario);

@@ -1,14 +1,14 @@
 /// Module: purchase
 /// Purchase receipts, seller vaults, and payment splitting.
-module fast_and_furious::purchase;
+module wooper::purchase;
 
 // === Imports ===
 use sui::sui::SUI;
 use sui::coin::{Self, Coin};
 use sui::balance::{Self, Balance};
-use fast_and_furious::marketplace::MarketplaceConfig;
-use fast_and_furious::skill::SkillListing;
-use fast_and_furious::package_listing::PackageListing;
+use wooper::marketplace::MarketplaceConfig;
+use wooper::skill::SkillListing;
+use wooper::package_listing::PackageListing;
 
 // === Errors ===
 const EListingNotActive: u64 = 400;

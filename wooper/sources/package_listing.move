@@ -1,10 +1,10 @@
 /// Module: package_listing
 /// Bundled skill packages with discount pricing.
-module fast_and_furious::package_listing;
+module wooper::package_listing;
 
 // === Imports ===
 use std::string::String;
-use fast_and_furious::marketplace::{MarketplaceConfig, ListingsRegistry};
+use wooper::marketplace::{MarketplaceConfig, ListingsRegistry};
 
 // === Errors ===
 const ENotSeller: u64 = 300;
@@ -92,7 +92,7 @@ public fun create(
 
     let package_id = object::id(&listing);
 
-    fast_and_furious::marketplace::register_listing(registry, package_id, listing.tags);
+    wooper::marketplace::register_listing(registry, package_id, listing.tags);
 
     sui::event::emit(PackageListed {
         package_id,
@@ -123,7 +123,7 @@ public fun delist(
 
     listing.is_active = false;
 
-    fast_and_furious::marketplace::unregister_listing(registry, object::id(listing));
+    wooper::marketplace::unregister_listing(registry, object::id(listing));
 
     sui::event::emit(PackageDelisted {
         package_id: object::id(listing),

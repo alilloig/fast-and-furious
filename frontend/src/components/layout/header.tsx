@@ -17,7 +17,7 @@ export function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="text-xl font-bold tracking-tight">
-            Fast & Furious
+            Wooper
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
             {NAV_LINKS.map((link) => (

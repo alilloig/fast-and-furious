@@ -44,7 +44,7 @@ export function MobileNav() {
       </SheetTrigger>
       <SheetContent side="left">
         <SheetHeader>
-          <SheetTitle>Fast & Furious</SheetTitle>
+          <SheetTitle>Wooper</SheetTitle>
         </SheetHeader>
         <nav className="mt-8 flex flex-col gap-4">
           {NAV_LINKS.map((link) => (

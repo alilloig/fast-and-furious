@@ -1,11 +1,11 @@
 #[test_only]
-module fast_and_furious::seal_policy_tests;
+module wooper::seal_policy_tests;
 
 use std::unit_test::destroy;
-use fast_and_furious::marketplace;
-use fast_and_furious::purchase;
-use fast_and_furious::seal_policy;
-use fast_and_furious::test_utils;
+use wooper::marketplace;
+use wooper::purchase;
+use wooper::seal_policy;
+use wooper::test_utils;
 
 /// Build a 37-byte Seal key id: [skill_listing_id (32 bytes)] ++ [nonce (5 bytes)]
 fun build_seal_id(skill_listing_id: ID): vector<u8> {
@@ -68,7 +68,7 @@ fun seal_approve_multiple_skills_in_receipt() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = 500, location = fast_and_furious::seal_policy)]
+#[test, expected_failure(abort_code = 500, location = wooper::seal_policy)]
 fun seal_approve_no_matching_skill_fails() {
     let mut scenario = test_utils::begin();
 
@@ -90,7 +90,7 @@ fun seal_approve_no_matching_skill_fails() {
     abort 0
 }
 
-#[test, expected_failure(abort_code = 502, location = fast_and_furious::seal_policy)]
+#[test, expected_failure(abort_code = 502, location = wooper::seal_policy)]
 fun seal_approve_invalid_key_id_fails() {
     let mut scenario = test_utils::begin();
 
@@ -110,7 +110,7 @@ fun seal_approve_invalid_key_id_fails() {
     abort 0
 }
 
-#[test, expected_failure(abort_code = 501, location = fast_and_furious::seal_policy)]
+#[test, expected_failure(abort_code = 501, location = wooper::seal_policy)]
 fun seal_approve_version_mismatch_fails() {
     let mut scenario = test_utils::begin();
 

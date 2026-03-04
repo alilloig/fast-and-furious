@@ -1,17 +1,17 @@
 #[test_only]
-module fast_and_furious::marketplace_tests;
+module wooper::marketplace_tests;
 
 use sui::test_scenario as ts;
 use std::unit_test::destroy;
 use std::unit_test::assert_eq;
-use fast_and_furious::marketplace::{
+use wooper::marketplace::{
     Self,
     MarketplaceConfig,
     AdminCap,
     PackageVersion,
     ListingsRegistry,
 };
-use fast_and_furious::test_utils;
+use wooper::test_utils;
 
 #[test]
 fun creates_all_objects_on_init() {
@@ -56,7 +56,7 @@ fun admin_can_update_fee() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = 101, location = fast_and_furious::marketplace)]
+#[test, expected_failure(abort_code = 101, location = wooper::marketplace)]
 fun update_fee_rejects_excessive_fee() {
     let mut scenario = test_utils::begin();
     marketplace::init_for_testing(scenario.ctx());
@@ -122,7 +122,7 @@ fun register_and_unregister_listing() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = 103, location = fast_and_furious::marketplace)]
+#[test, expected_failure(abort_code = 103, location = wooper::marketplace)]
 fun register_duplicate_listing_fails() {
     let mut scenario = test_utils::begin();
 
@@ -136,7 +136,7 @@ fun register_duplicate_listing_fails() {
     abort 0
 }
 
-#[test, expected_failure(abort_code = 104, location = fast_and_furious::marketplace)]
+#[test, expected_failure(abort_code = 104, location = wooper::marketplace)]
 fun unregister_nonexistent_listing_fails() {
     let mut scenario = test_utils::begin();
 

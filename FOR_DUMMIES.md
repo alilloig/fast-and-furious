@@ -1,6 +1,6 @@
-# Fast & Furious — For Dummies
+# Wooper — For Dummies
 
-A plain-English guide to understanding, running, and contributing to Fast & Furious.
+A plain-English guide to understanding, running, and contributing to Wooper.
 Start here if you are new to this repository.
 
 ---
@@ -26,7 +26,7 @@ Start here if you are new to this repository.
 
 ## What Is This?
 
-Fast & Furious is a decentralized marketplace for buying and selling AI skills (prompts, agents, tool configs) on the Sui blockchain. Sellers upload encrypted skill files to Walrus (decentralized storage), list them on-chain with metadata and pricing, and earn SUI from sales. Buyers discover skills, purchase them on-chain, and decrypt the content client-side using Seal encryption.
+Wooper is a decentralized marketplace for buying and selling AI skills (prompts, agents, tool configs) on the Sui blockchain. Sellers upload encrypted skill files to Walrus (decentralized storage), list them on-chain with metadata and pricing, and earn SUI from sales. Buyers discover skills, purchase them on-chain, and decrypt the content client-side using Seal encryption.
 
 The platform takes a configurable fee (in basis points) on every sale, enforced entirely by Move smart contracts. There is no backend server — the frontend talks directly to the Sui blockchain via gRPC and proxies Walrus uploads/downloads through Next.js API routes.
 
@@ -52,7 +52,7 @@ The project has completed **Phases 1–2** of its 5-phase implementation plan. A
 - `Move.toml` is configured for edition 2024
 - Test suites for all modules (`marketplace_tests`, `skill_tests`, `purchase_tests`, `seal_policy_tests`, `package_listing_tests`)
 - Shared `test_utils` module with test addresses and helpers
-- Build artifacts exist in `move/fast_and_furious/build/`
+- Build artifacts exist in `move/wooper/build/`
 
 **What exists but is scaffolded:**
 - `frontend/` — Next.js 16 project with Tailwind CSS 4, shadcn/ui components, and Sui SDK dependencies installed. The landing page is still the default Next.js template.
@@ -72,7 +72,7 @@ The project has completed **Phases 1–2** of its 5-phase implementation plan. A
 
 ```bash
 # 1. Build the Move contracts
-cd move/fast_and_furious && sui move build
+cd move/wooper && sui move build
 
 # 2. Run all Move tests
 sui move test
@@ -218,7 +218,7 @@ Seal automatically prepends the `package_id`. The `seal_approve` function only r
 ### Move Contracts
 
 ```bash
-cd move/fast_and_furious
+cd move/wooper
 
 # Build
 sui move build
@@ -317,9 +317,9 @@ The four `NEXT_PUBLIC_*_ID` variables are placeholders (`0x0`) until the Move pa
 
 ## Key Commands
 
-**`cd move/fast_and_furious && sui move build`** — Compile the Move package. Run this after any contract changes to verify they compile.
+**`cd move/wooper && sui move build`** — Compile the Move package. Run this after any contract changes to verify they compile.
 
-**`cd move/fast_and_furious && sui move test`** — Run all Move unit tests. The test suite has tests across 5 test modules covering happy paths and error cases.
+**`cd move/wooper && sui move test`** — Run all Move unit tests. The test suite has tests across 5 test modules covering happy paths and error cases.
 
 **`cd frontend && npm run dev`** — Start the Next.js development server at `http://localhost:3000`.
 
@@ -350,18 +350,18 @@ The four `NEXT_PUBLIC_*_ID` variables are placeholders (`0x0`) until the Move pa
 | File | Description |
 |---|---|
 | `CLAUDE.md` | Full project spec: architecture, module designs, data flows, security model, implementation plan |
-| `move/fast_and_furious/Move.toml` | Move package manifest (edition 2024) |
-| `move/fast_and_furious/sources/marketplace.move` | Platform config, admin cap, version gating, listings registry (dynamic fields) |
-| `move/fast_and_furious/sources/skill.move` | Individual skill listing struct, create/delist functions, seller cap |
-| `move/fast_and_furious/sources/package_listing.move` | Bundled skill packages with discount pricing |
-| `move/fast_and_furious/sources/purchase.move` | Purchase receipts (NFT), seller vaults, payment splitting, vault withdrawals |
-| `move/fast_and_furious/sources/seal_policy.move` | Seal access control entry function for decryption gating |
-| `move/fast_and_furious/sources/test_utils.move` | Shared test addresses (ADMIN, USER1, USER2) and scenario helpers |
-| `move/fast_and_furious/sources/*_tests.move` | Test suites for each module (5 files) |
+| `move/wooper/Move.toml` | Move package manifest (edition 2024) |
+| `move/wooper/sources/marketplace.move` | Platform config, admin cap, version gating, listings registry (dynamic fields) |
+| `move/wooper/sources/skill.move` | Individual skill listing struct, create/delist functions, seller cap |
+| `move/wooper/sources/package_listing.move` | Bundled skill packages with discount pricing |
+| `move/wooper/sources/purchase.move` | Purchase receipts (NFT), seller vaults, payment splitting, vault withdrawals |
+| `move/wooper/sources/seal_policy.move` | Seal access control entry function for decryption gating |
+| `move/wooper/sources/test_utils.move` | Shared test addresses (ADMIN, USER1, USER2) and scenario helpers |
+| `move/wooper/sources/*_tests.move` | Test suites for each module (5 files) |
 | `frontend/package.json` | Frontend dependencies and scripts |
 | `frontend/.env.example` | Environment variable template with Sui object IDs and Walrus endpoints |
 | `frontend/src/app/layout.tsx` | Root layout (Geist fonts, no providers yet) |
 | `frontend/src/app/page.tsx` | Landing page (default Next.js template) |
 | `frontend/src/components/ui/` | Pre-installed shadcn/ui components (button, card, input, badge, etc.) |
 | `frontend/src/lib/utils.ts` | `cn()` utility for Tailwind class merging |
-| `.gitignore` | Ignores `move/fast_and_furious/build` |
+| `.gitignore` | Ignores `move/wooper/build` |
