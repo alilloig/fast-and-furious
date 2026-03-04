@@ -1,4 +1,9 @@
-import type { SkillListing, PackageListing, MarketplaceConfig } from "./types";
+import type {
+  SkillListing,
+  PackageListing,
+  MarketplaceConfig,
+  PurchaseReceipt,
+} from "./types";
 
 /**
  * Parse a gRPC JSON object into a SkillListing.
@@ -56,6 +61,23 @@ export function parseMarketplaceConfig(
     version: Number(json.version as string),
     feeBps: Number(json.fee_bps as string),
     feeRecipient: json.fee_recipient as string,
+  };
+}
+
+/**
+ * Parse a gRPC JSON object into a PurchaseReceipt.
+ */
+export function parsePurchaseReceipt(
+  objectId: string,
+  json: Record<string, unknown>,
+): PurchaseReceipt {
+  return {
+    id: objectId,
+    buyer: json.buyer as string,
+    skillIds: json.skill_ids as string[],
+    seller: json.seller as string,
+    amountPaid: BigInt(json.amount_paid as string),
+    purchasedAtEpoch: Number(json.purchased_at_epoch as string),
   };
 }
 

@@ -1,4 +1,4 @@
-import type { SkillListing, PackageListing } from "./types";
+import type { SkillListing, PackageListing, PurchaseReceipt } from "./types";
 
 export const MOCK_SKILLS: SkillListing[] = [
   {
@@ -75,6 +75,25 @@ export const MOCK_PACKAGES: PackageListing[] = [
     price: 12_000_000_000n, // 12 SUI (15 - 20%)
     createdAtEpoch: 104,
     isActive: true,
+  },
+];
+
+export const MOCK_RECEIPTS: PurchaseReceipt[] = [
+  {
+    id: "0xmock_receipt_1",
+    buyer: "0x1111222233334444555566667777888899990000",
+    skillIds: ["0xmock_skill_1"],
+    seller: "0xaa00bb11cc22dd33ee44ff5566778899aabbccdd",
+    amountPaid: 5_000_000_000n,
+    purchasedAtEpoch: 105,
+  },
+  {
+    id: "0xmock_receipt_2",
+    buyer: "0x1111222233334444555566667777888899990000",
+    skillIds: ["0xmock_skill_1", "0xmock_skill_4"],
+    seller: "0xaa00bb11cc22dd33ee44ff5566778899aabbccdd",
+    amountPaid: 12_000_000_000n,
+    purchasedAtEpoch: 106,
   },
 ];
 

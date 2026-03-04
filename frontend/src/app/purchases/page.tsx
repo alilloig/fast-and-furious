@@ -1,13 +1,23 @@
 "use client";
 
 import { useCurrentAccount } from "@mysten/dapp-kit-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { EmptyState } from "@/components/empty-state";
 import { ConnectButton } from "@mysten/dapp-kit-react/ui";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/empty-state";
+import { ReceiptCard } from "@/components/purchases/receipt-card";
+import { usePurchaseReceipts } from "@/hooks/use-purchase-receipts";
+import { useSkillListings } from "@/hooks/use-skill-listings";
 
 export default function PurchasesPage() {
   const account = useCurrentAccount();
+  const { data: receipts, isLoading: receiptsLoading } = usePurchaseReceipts();
+
+  // Collect all unique skill IDs across all receipts to fetch in one batch
+  const allSkillIds = Array.from(
+    new Set(receipts?.flatMap((r) => r.skillIds) ?? []),
+  );
+  const { data: skills } = useSkillListings(allSkillIds);
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
@@ -22,11 +32,27 @@ export default function PurchasesPage() {
             <ConnectButton />
           </CardContent>
         </Card>
-      ) : (
+      ) : receiptsLoading ? (
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-40 w-full" />
+          ))}
+        </div>
+      ) : !receipts || receipts.length === 0 ? (
         <EmptyState
-          title="Coming in Phase 4"
-          description="Purchase and decryption flows will be available after contracts are deployed to testnet."
+          title="No purchases yet"
+          description="Browse the marketplace to find AI skills and agents to purchase."
         />
+      ) : (
+        <div className="space-y-4">
+          {receipts.map((receipt) => (
+            <ReceiptCard
+              key={receipt.id}
+              receipt={receipt}
+              skills={skills ?? []}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

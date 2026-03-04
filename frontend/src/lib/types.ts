@@ -36,3 +36,12 @@ export interface RegistryEntry {
   listingId: string;
   tags: string[];
 }
+
+export interface PurchaseReceipt {
+  id: string;
+  buyer: string;
+  skillIds: string[];
+  seller: string;
+  amountPaid: bigint;
+  purchasedAtEpoch: number;
+}
