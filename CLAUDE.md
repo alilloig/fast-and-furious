@@ -8,23 +8,25 @@
 
 ### What We're Building
 
-A three-layer decentralized marketplace where:
+A two-layer decentralized marketplace where:
 
 - **Sellers** upload encrypted AI skill files (prompts, agents, tool configs) to Walrus, list them on-chain with metadata and pricing, and earn SUI from sales.
-- **Buyers** discover skills via a searchable frontend, purchase on-chain, and decrypt content client-side using Seal.
+- **Buyers** discover skills via the on-chain ListingsRegistry, purchase on-chain, and decrypt content client-side using Seal.
 - **The platform** takes a configurable fee (basis points) on each sale, enforced by Move smart contracts.
 
 ### Core Principles
 
 - **Immutable listings** — Create + Delete only. No edits. Sellers delist and re-list to "update."
-- **Client-side decryption** — The backend never sees plaintext skill content. Seal key servers + MoveVM enforce access.
+- **Client-side decryption** — No server ever sees plaintext skill content. Seal key servers + MoveVM enforce access.
+- **Fully on-chain discovery** — A shared `ListingsRegistry` object indexes all listings. The frontend reads directly from chain via gRPC.
 - **SUI-only payments** — No custom tokens. Platform fee in basis points for flexibility.
 - **gRPC-only** — All Sui RPC via `SuiGrpcClient`. No JSON-RPC. No GraphQL.
+- **No backend** — No Node.js server, no database, no event indexer. The frontend talks directly to the chain and proxies Walrus through Next.js API routes.
 
 ### Non-Goals
 
 - Token launchpad or custom fungible tokens
-- On-chain reviews/ratings (off-chain in PostgreSQL for v1)
+- On-chain reviews/ratings
 - Automatic on-chain renewal (seller manually signs renewal PTBs)
 - IPFS or Arweave integration (Walrus only)
 - Mobile-native apps (responsive web only)
@@ -39,15 +41,12 @@ A three-layer decentralized marketplace where:
 │  Next.js 14+ · Tailwind CSS · @mysten/dapp-kit-react       │
 │  @mysten/seal (client-side encrypt/decrypt)                 │
 │  TanStack Query · SuiGrpcClient                            │
-├─────────────────────────────────────────────────────────────┤
-│                     BACKEND (Node.js)                       │
-│  Express/Fastify · TypeScript · PostgreSQL                  │
-│  Event Indexer (gRPC SubscribeCheckpoints)                  │
-│  Walrus Upload Proxy · Renewal Monitor                     │
+│  Next.js API Routes (Walrus proxy)                          │
 ├─────────────────────────────────────────────────────────────┤
 │                     ON-CHAIN (Sui Move)                     │
 │  marketplace · skill · package_listing                      │
 │  purchase · seal_policy                                     │
+│  ListingsRegistry (shared, dynamic fields)                  │
 │  Seal Key Servers (testnet/mainnet)                         │
 │  Walrus Blob Storage                                        │
 └─────────────────────────────────────────────────────────────┘
@@ -55,8 +54,8 @@ A three-layer decentralized marketplace where:
 
 **Data flow summary:**
 
-1. Seller encrypts skill files client-side with Seal → uploads ciphertext to Walrus via backend proxy → creates SkillListing on-chain
-2. Buyer browses skills (PostgreSQL full-text search) → purchases on-chain (SUI payment split: seller vault + platform fee) → receives PurchaseReceipt NFT
+1. Seller encrypts skill files client-side with Seal → uploads ciphertext to Walrus via Next.js API route → creates SkillListing on-chain (registered in ListingsRegistry)
+2. Buyer discovers skills via ListingsRegistry (gRPC `ListDynamicFields`) → filters client-side by tags → fetches individual SkillListing objects for details → purchases on-chain (SUI payment split: seller vault + platform fee) → receives PurchaseReceipt NFT
 3. Buyer builds PTB calling `seal_approve` with their PurchaseReceipt → Seal key servers dry-run to verify access → buyer decrypts locally
 
 ---
@@ -74,9 +73,6 @@ A three-layer decentralized marketplace where:
 | Sui client | `SuiGrpcClient` from `@mysten/sui/grpc` | gRPC only |
 | Transaction building | `@mysten/sui/transactions` | `Transaction` class |
 | State management | TanStack Query | `@tanstack/react-query` |
-| Backend runtime | Node.js + TypeScript | 20 LTS+ |
-| Backend framework | Express or Fastify | TBD in Phase 3 |
-| Database | PostgreSQL | 15+ with full-text search |
 | BCS parsing | `@mysten/sui/bcs` | For gRPC object content |
 
 ### Key Server Configuration (Testnet)
@@ -102,15 +98,20 @@ const SEAL_THRESHOLD = 2;
 Package name: `fast_and_furious`
 Package address: `0x0` (publish-time)
 
-### 4.1 `marketplace.move` — Platform Configuration
+### 4.1 `marketplace.move` — Platform Configuration & Listings Registry
 
 ```move
 module fast_and_furious::marketplace;
+
+// === Imports ===
+use sui::dynamic_field;
 
 // === Errors ===
 const ENotAuthorized: u64 = 100;
 const EInvalidFeeBps: u64 = 101;
 const EWrongVersion: u64 = 102;
+const EListingAlreadyRegistered: u64 = 103;
+const EListingNotRegistered: u64 = 104;
 
 // === Constants ===
 const MAX_FEE_BPS: u64 = 10_000; // 100%
@@ -138,10 +139,18 @@ public struct PackageVersion has key {
     version: u64,
 }
 
+/// Shared object — central index of all listings.
+/// Uses dynamic fields: key = listing ID, value = vector<String> (tags).
+/// Frontend enumerates via `ListDynamicFields` gRPC to discover all listings.
+public struct ListingsRegistry has key {
+    id: UID,
+    listing_count: u64,
+}
+
 // === Init ===
 fun init(ctx: &mut TxContext) {
     // Creates MarketplaceConfig (shared), AdminCap (transfer to sender),
-    // and PackageVersion (shared).
+    // PackageVersion (shared), and ListingsRegistry (shared).
 }
 
 // === Admin Functions ===
@@ -151,10 +160,35 @@ public fun update_fee(_: &AdminCap, config: &mut MarketplaceConfig, new_fee_bps:
 /// Update the fee recipient address.
 public fun update_fee_recipient(_: &AdminCap, config: &mut MarketplaceConfig, new_recipient: address);
 
+// === Registry Functions ===
+/// Register a listing in the registry. Called by skill::create and package_listing::create.
+/// Adds a dynamic field: key = listing_id, value = tags.
+public(package) fun register_listing(
+    registry: &mut ListingsRegistry,
+    listing_id: ID,
+    tags: vector<String>,
+) {
+    assert!(!dynamic_field::exists_(&registry.id, listing_id), EListingAlreadyRegistered);
+    dynamic_field::add(&mut registry.id, listing_id, tags);
+    registry.listing_count = registry.listing_count + 1;
+}
+
+/// Unregister a listing from the registry. Called by skill::delist and package_listing::delist.
+/// Removes the dynamic field for this listing.
+public(package) fun unregister_listing(
+    registry: &mut ListingsRegistry,
+    listing_id: ID,
+) {
+    assert!(dynamic_field::exists_(&registry.id, listing_id), EListingNotRegistered);
+    dynamic_field::remove<ID, vector<String>>(&mut registry.id, listing_id);
+    registry.listing_count = registry.listing_count - 1;
+}
+
 // === View Functions ===
 public fun fee_bps(config: &MarketplaceConfig): u64;
 public fun fee_recipient(config: &MarketplaceConfig): address;
 public fun version(config: &MarketplaceConfig): u64;
+public fun listing_count(registry: &ListingsRegistry): u64;
 ```
 
 ### 4.2 `skill.move` — Individual Skill Listings
@@ -212,8 +246,10 @@ public struct SkillDelisted has copy, drop {
 
 /// Create a new skill listing. Returns SellerCap to the caller.
 /// SkillListing is shared. SellerCap is transferred to sender.
+/// Registers the listing in the ListingsRegistry with its tags.
 public fun create(
     config: &MarketplaceConfig,
+    registry: &mut ListingsRegistry,
     title: String,
     description: String,
     price: u64,
@@ -226,11 +262,13 @@ public fun create(
 );
 
 /// Delist a skill. Requires SellerCap. Sets is_active = false.
+/// Removes the listing from the ListingsRegistry.
 /// The SkillListing object remains on-chain (purchases remain valid for
 /// already-purchased buyers to decrypt).
 public fun delist(
     seller_cap: &SellerCap,
     listing: &mut SkillListing,
+    registry: &mut ListingsRegistry,
 );
 
 // === View Functions ===
@@ -292,8 +330,10 @@ public struct PackageDelisted has copy, drop {
 // === Public Functions ===
 
 /// Create a package listing. Computes price from sum of skill prices minus discount.
+/// Registers the package in the ListingsRegistry.
 public fun create(
     config: &MarketplaceConfig,
+    registry: &mut ListingsRegistry,
     title: String,
     description: String,
     skill_ids: vector<ID>,
@@ -302,9 +342,11 @@ public fun create(
 );
 
 /// Delist a package. Sets is_active = false.
+/// Removes the package from the ListingsRegistry.
 public fun delist(
     seller_cap: &PackageSellerCap,
     listing: &mut PackageListing,
+    registry: &mut ListingsRegistry,
 );
 
 // === View Functions ===
@@ -496,7 +538,7 @@ Events are co-located with their respective modules (not a separate module):
 ### 5.1 Encryption Flow (Seller Uploads)
 
 ```
-Seller (browser)                    Backend Proxy                 Walrus
+Seller (browser)                Next.js API Route                 Walrus
       │                                  │                          │
       │  1. Select files                 │                          │
       │  2. Generate nonce (5 bytes)     │                          │
@@ -511,7 +553,7 @@ Seller (browser)                    Backend Proxy                 Walrus
       │     })                           │                          │
       │  → encryptedBytes               │                          │
       │                                  │                          │
-      │  5. POST /api/upload             │                          │
+      │  5. POST /api/walrus/upload      │                          │
       │     { encryptedBytes,            │                          │
       │       metadata }                 │                          │
       │──────────────────────────────────►│                          │
@@ -522,7 +564,8 @@ Seller (browser)                    Backend Proxy                 Walrus
       │                                  │                          │
       │  7. Create SkillListing on-chain │                          │
       │     (includes walrus_blob_id,    │                          │
-      │      seal_key_id)                │                          │
+      │      seal_key_id; registered in  │                          │
+      │      ListingsRegistry)           │                          │
 ```
 
 ### 5.2 Decryption Flow (Buyer Downloads)
@@ -531,7 +574,8 @@ Seller (browser)                    Backend Proxy                 Walrus
 Buyer (browser)                   Seal Key Servers            Sui Full Node
       │                                  │                          │
       │  1. Fetch encrypted blob from    │                          │
-      │     Walrus (via backend proxy)   │                          │
+      │     Walrus (via Next.js API      │                          │
+      │     route /api/walrus/download)  │                          │
       │                                  │                          │
       │  2. Create SessionKey:           │                          │
       │     SessionKey.create({          │                          │
@@ -610,163 +654,54 @@ const restored = await SessionKey.import(imported, suiClient);
 
 ---
 
-## 6. Backend API Contracts
+## 6. Walrus Proxy (Next.js API Routes)
 
-### 6.1 REST Endpoints
-
-#### Skill Discovery
+Walrus uploads and downloads are proxied through Next.js API routes. These are thin pass-through handlers — no database, no indexing, no cron jobs.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/skills` | List skills (paginated, filterable) |
-| `GET` | `/api/skills/:id` | Get skill details |
-| `GET` | `/api/skills/search?q=` | Full-text search |
-| `GET` | `/api/packages` | List packages (paginated) |
-| `GET` | `/api/packages/:id` | Get package details |
-| `GET` | `/api/sellers/:address` | Seller profile + listings |
-| `GET` | `/api/categories` | List categories with counts |
+| `POST` | `/api/walrus/upload` | Proxy encrypted bytes to Walrus publisher, return blobId |
+| `GET` | `/api/walrus/download/:blobId` | Proxy fetch encrypted blob from Walrus aggregator |
 
-#### Walrus Proxy
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/upload` | Upload encrypted bytes to Walrus, return blobId |
-| `GET` | `/api/download/:blobId` | Fetch encrypted blob from Walrus |
-
-#### Seller Dashboard
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/sellers/:address/sales` | Sales history |
-| `GET` | `/api/sellers/:address/revenue` | Revenue summary |
-| `GET` | `/api/sellers/:address/renewals` | Upcoming renewals |
-
-#### Health & Admin
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/health` | Service health |
-| `GET` | `/api/stats` | Marketplace statistics |
-
-### 6.2 PostgreSQL Schema
-
-```sql
--- Indexed from on-chain events
-
-CREATE TABLE skills (
-    id TEXT PRIMARY KEY,                -- on-chain SkillListing object ID
-    seller TEXT NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    price BIGINT NOT NULL,              -- in MIST
-    category TEXT NOT NULL,
-    tags TEXT[] DEFAULT '{}',
-    walrus_blob_id TEXT NOT NULL,
-    walrus_quilt_id TEXT,
-    seal_key_id BYTEA NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at_epoch BIGINT NOT NULL,
-    indexed_at TIMESTAMPTZ DEFAULT NOW(),
-    -- Full-text search
-    search_vector TSVECTOR GENERATED ALWAYS AS (
-        setweight(to_tsvector('english', title), 'A') ||
-        setweight(to_tsvector('english', description), 'B') ||
-        setweight(to_tsvector('english', category), 'C')
-    ) STORED
-);
-
-CREATE INDEX idx_skills_search ON skills USING GIN (search_vector);
-CREATE INDEX idx_skills_category ON skills (category) WHERE is_active = TRUE;
-CREATE INDEX idx_skills_seller ON skills (seller);
-CREATE INDEX idx_skills_price ON skills (price) WHERE is_active = TRUE;
-
-CREATE TABLE packages (
-    id TEXT PRIMARY KEY,                -- on-chain PackageListing object ID
-    seller TEXT NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    skill_ids TEXT[] NOT NULL,
-    discount_bps INTEGER NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at_epoch BIGINT NOT NULL,
-    indexed_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_packages_seller ON packages (seller);
-
-CREATE TABLE purchases (
-    id TEXT PRIMARY KEY,                -- on-chain PurchaseReceipt object ID
-    buyer TEXT NOT NULL,
-    skill_ids TEXT[] NOT NULL,
-    seller TEXT NOT NULL,
-    amount_paid BIGINT NOT NULL,
-    platform_fee BIGINT NOT NULL,
-    seller_revenue BIGINT NOT NULL,
-    purchased_at_epoch BIGINT NOT NULL,
-    indexed_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_purchases_buyer ON purchases (buyer);
-CREATE INDEX idx_purchases_seller ON purchases (seller);
-
-CREATE TABLE seller_vaults (
-    id TEXT PRIMARY KEY,                -- on-chain SellerVault object ID
-    seller TEXT NOT NULL UNIQUE,
-    balance BIGINT DEFAULT 0,
-    indexed_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE renewal_alerts (
-    id SERIAL PRIMARY KEY,
-    skill_id TEXT NOT NULL REFERENCES skills(id),
-    seller TEXT NOT NULL,
-    walrus_blob_id TEXT NOT NULL,
-    expiry_epoch BIGINT NOT NULL,
-    alert_level TEXT NOT NULL,          -- 'warning_2_epoch', 'warning_1_epoch', 'expired'
-    notified_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-### 6.3 Event Indexer
-
-Uses gRPC `SubscriptionService.SubscribeCheckpoints` to stream checkpoint data in real-time.
+### Upload Route
 
 ```typescript
-import { SuiGrpcClient } from '@mysten/sui/grpc';
+// app/api/walrus/upload/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 
-const client = new SuiGrpcClient({
-  network: 'testnet',
-  baseUrl: 'https://fullnode.testnet.sui.io:443',
-});
+const WALRUS_PUBLISHER_URL = process.env.WALRUS_PUBLISHER_URL!;
 
-// Stream checkpoints and filter for marketplace events
-// Pattern: SubscribeCheckpoints → extract transactions → filter by event type
-// Event types to index:
-//   {packageId}::skill::SkillListed
-//   {packageId}::skill::SkillDelisted
-//   {packageId}::package_listing::PackageListed
-//   {packageId}::package_listing::PackageDelisted
-//   {packageId}::purchase::SkillPurchased
-//   {packageId}::purchase::VaultWithdrawal
+export async function POST(req: NextRequest) {
+  const body = await req.arrayBuffer();
+  const response = await fetch(`${WALRUS_PUBLISHER_URL}/v1/blobs`, {
+    method: 'PUT',
+    body,
+    headers: { 'Content-Type': 'application/octet-stream' },
+  });
+  const result = await response.json();
+  return NextResponse.json(result);
+}
 ```
 
-**Backfill strategy:** On indexer restart, use `LedgerService.GetCheckpoint` to read from `last_processed_checkpoint` to current, then switch to streaming.
+### Download Route
 
-### 6.4 Renewal Monitor
+```typescript
+// app/api/walrus/download/[blobId]/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 
-A cron job (runs every epoch, ~24h) that:
+const WALRUS_AGGREGATOR_URL = process.env.WALRUS_AGGREGATOR_URL!;
 
-1. Queries skills with Walrus blob expiry approaching within 2 epochs
-2. Creates `renewal_alerts` entries with `alert_level = 'warning_2_epoch'`
-3. At 1 epoch remaining: updates to `alert_level = 'warning_1_epoch'`
-4. Sends notification to seller (webhook, email, or in-app)
-
-**Note:** Actual renewal requires the seller to sign a PTB that:
-1. Withdraws SUI from their SellerVault
-2. Calls Walrus storage extension (off-chain via Walrus CLI/API)
-
-The backend facilitates but does not execute — the seller must approve the transaction.
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { blobId: string } },
+) {
+  const response = await fetch(`${WALRUS_AGGREGATOR_URL}/v1/blobs/${params.blobId}`);
+  const blob = await response.arrayBuffer();
+  return new NextResponse(blob, {
+    headers: { 'Content-Type': 'application/octet-stream' },
+  });
+}
+```
 
 ---
 
@@ -793,7 +728,13 @@ app/
 │       └── page.tsx        # Public seller profile
 ├── purchases/
 │   └── page.tsx            # My purchases + decrypt button
-└── api/                    # Next.js API routes (proxy to backend or direct)
+└── api/
+    └── walrus/
+        ├── upload/
+        │   └── route.ts    # Walrus upload proxy
+        └── download/
+            └── [blobId]/
+                └── route.ts # Walrus download proxy
 ```
 
 ### 7.2 Wallet Integration Setup
@@ -834,10 +775,78 @@ declare module '@mysten/dapp-kit-react' {
 | `useCurrentClient()` | `@mysten/dapp-kit-react` | `SuiGrpcClient` instance |
 | `useDAppKit()` | `@mysten/dapp-kit-react` | Sign and execute transactions |
 | `ConnectButton` | `@mysten/dapp-kit-react` | Wallet connect UI |
-| `useQuery` | `@tanstack/react-query` | Cache & fetch backend data |
+| `useQuery` | `@tanstack/react-query` | Cache on-chain queries |
 | `useMutation` | `@tanstack/react-query` | Execute purchase/delist actions |
 
-### 7.4 Purchase Flow (Frontend)
+### 7.4 On-Chain Discovery (ListingsRegistry)
+
+The frontend discovers listings by reading dynamic fields from the shared `ListingsRegistry` object via gRPC, then fetching individual `SkillListing` objects for display.
+
+```typescript
+import { SuiGrpcClient } from '@mysten/sui/grpc';
+import { bcs } from '@mysten/sui/bcs';
+
+const LISTINGS_REGISTRY_ID = '0x...'; // populated after deployment
+
+interface ListingEntry {
+  listingId: string;
+  tags: string[];
+}
+
+/// Enumerate all listings from the registry using paginated ListDynamicFields.
+async function discoverListings(client: SuiGrpcClient): Promise<ListingEntry[]> {
+  const entries: ListingEntry[] = [];
+  let cursor: string | undefined;
+  let hasMore = true;
+
+  while (hasMore) {
+    const page = await client.listDynamicFields({
+      parentId: LISTINGS_REGISTRY_ID,
+      cursor,
+      limit: 50,
+    });
+
+    for (const field of page.data) {
+      // Each dynamic field key is an ID (listing ID), value is vector<String> (tags)
+      const detail = await client.getDynamicFieldObject({
+        parentId: LISTINGS_REGISTRY_ID,
+        name: field.name,
+      });
+      const tags = parseTags(detail); // BCS-decode the vector<String> value
+      entries.push({
+        listingId: field.name.value as string,
+        tags,
+      });
+    }
+
+    cursor = page.nextCursor;
+    hasMore = page.hasNextPage;
+  }
+
+  return entries;
+}
+
+/// Fetch full SkillListing objects for a batch of listing IDs.
+async function fetchListingDetails(
+  client: SuiGrpcClient,
+  listingIds: string[],
+): Promise<SkillListing[]> {
+  const objects = await client.multiGetObjects({
+    ids: listingIds,
+    options: { showContent: true },
+  });
+  return objects.map(parseSkillListing); // BCS-decode each object
+}
+```
+
+**Discovery flow:**
+
+1. `ListDynamicFields` on the registry → returns all listing IDs + tags (paginated)
+2. Client-side filter by tags (category, keywords)
+3. `multiGetObjects` to fetch full `SkillListing` objects for the filtered set
+4. Display in the UI
+
+### 7.5 Purchase Flow (Frontend)
 
 ```typescript
 import { useDAppKit } from '@mysten/dapp-kit-react';
@@ -865,7 +874,7 @@ async function purchaseSkill(listingId: string, vaultId: string, price: bigint) 
 }
 ```
 
-### 7.5 Decrypt Flow (Frontend)
+### 7.6 Decrypt Flow (Frontend)
 
 ```typescript
 import { SealClient, SessionKey, EncryptedObject } from '@mysten/seal';
@@ -913,32 +922,31 @@ async function decryptSkill(
 
 1. Seller connects wallet
 2. Fills listing form (title, description, price, category, tags)
-3. Uploads skill file(s) → browser encrypts with Seal → POST to backend → stored on Walrus
-4. Browser builds PTB: `skill::create(...)` with Walrus blob ID and Seal key ID
-5. Seller signs and executes → SkillListing (shared) + SellerCap (owned) created
-6. Indexer picks up `SkillListed` event → inserts into PostgreSQL
+3. Uploads skill file(s) → browser encrypts with Seal → POST to Next.js API route → stored on Walrus
+4. Browser builds PTB: `skill::create(...)` with Walrus blob ID, Seal key ID, and `&mut ListingsRegistry`
+5. Seller signs and executes → SkillListing (shared) + SellerCap (owned) created, listing registered in ListingsRegistry
 
 ### 8.2 Browse & Search
 
 1. Buyer visits `/explore`
-2. Frontend calls `GET /api/skills?category=&q=&sort=&page=`
-3. Backend runs PostgreSQL full-text search
-4. Returns paginated results with metadata
+2. Frontend calls `ListDynamicFields` on the ListingsRegistry via gRPC (paginated)
+3. Client-side filtering by tags, category keywords
+4. Frontend fetches individual `SkillListing` objects via `multiGetObjects` for display
+5. Results rendered in filterable grid
 
 ### 8.3 Purchase
 
-1. Buyer views `/skill/[id]` → sees price, description, seller
+1. Buyer views `/skill/[id]` → fetches SkillListing object via gRPC → sees price, description, seller
 2. Clicks "Purchase" → browser builds PTB: `purchase::purchase_skill(...)`
 3. Buyer signs → payment split on-chain (seller vault + platform fee)
 4. PurchaseReceipt NFT transferred to buyer
-5. Indexer picks up `SkillPurchased` event → inserts into PostgreSQL
-6. Frontend redirects to `/purchases`
+5. Frontend redirects to `/purchases`
 
 ### 8.4 Decrypt
 
-1. Buyer visits `/purchases` → sees list of owned PurchaseReceipts
+1. Buyer visits `/purchases` → fetches owned PurchaseReceipt objects via gRPC
 2. Clicks "Download" on a skill
-3. Frontend fetches encrypted blob from Walrus (via backend proxy)
+3. Frontend fetches encrypted blob from Walrus via Next.js API route (`/api/walrus/download/:blobId`)
 4. Creates/restores SessionKey (wallet popup if new session)
 5. Builds PTB with `seal_approve` → calls `sealClient.decrypt()`
 6. Seal key servers dry-run the PTB → verify PurchaseReceipt ownership
@@ -946,22 +954,20 @@ async function decryptSkill(
 
 ### 8.5 Renew Storage
 
-1. Renewal monitor detects approaching Walrus expiry
-2. Backend creates alert, notifies seller
-3. Seller visits dashboard → sees renewal warning
-4. Seller clicks "Renew" → browser builds PTB:
+1. Seller visits dashboard → frontend reads on-chain listing data and checks Walrus blob status
+2. Frontend displays renewal warnings for blobs approaching expiry
+3. Seller clicks "Renew" → browser builds PTB:
    - `purchase::withdraw(vault, renewal_cost)` — get SUI from vault
    - Walrus storage extension call (off-chain step)
-5. Seller signs and executes
+4. Seller signs and executes
 
 ### 8.6 Delist
 
 1. Seller visits dashboard → clicks "Delist" on a listing
-2. Browser builds PTB: `skill::delist(seller_cap, listing)`
-3. Seller signs → `is_active` set to false
-4. Indexer picks up `SkillDelisted` event → updates PostgreSQL
-5. Listing no longer appears in search results
-6. **Existing PurchaseReceipts remain valid** — buyers can still decrypt
+2. Browser builds PTB: `skill::delist(seller_cap, listing, registry)`
+3. Seller signs → `is_active` set to false, listing removed from ListingsRegistry
+4. Listing no longer appears in browse results
+5. **Existing PurchaseReceipts remain valid** — buyers can still decrypt
 
 ---
 
@@ -979,6 +985,7 @@ async function decryptSkill(
 | **Seller impersonation on delist** | `delist` requires `SellerCap` (owned object). Only the seller who created the listing holds the cap. |
 | **Replay attacks on Seal decryption** | SessionKey has a TTL. Key servers validate the session timestamp. |
 | **Content redistribution after decryption** | Out of scope for v1. This is a fundamental DRM limitation. Buyers receive plaintext after decryption. |
+| **ListingsRegistry contention** | Shared object hotspot during high listing creation/deletion. Acceptable for v1 scale; can shard the registry into multiple objects later if needed. |
 
 ### 9.2 Edge Cases
 
@@ -992,7 +999,7 @@ async function decryptSkill(
 
 ---
 
-## 10. Implementation Plan (8 Phases)
+## 10. Implementation Plan (5 Phases)
 
 ### Phase 1: Move Contracts — Core
 
@@ -1000,7 +1007,8 @@ async function decryptSkill(
 
 **Deliverables:**
 - MarketplaceConfig shared object with init, admin functions
-- SkillListing shared object with create/delist
+- ListingsRegistry shared object with register/unregister functions
+- SkillListing shared object with create/delist (integrated with ListingsRegistry)
 - SellerCap ownership pattern
 - All events for these modules
 - Unit tests with `#[test]` attribute
@@ -1009,8 +1017,10 @@ async function decryptSkill(
 - `sui move build` succeeds with no warnings
 - `sui move test` passes all tests
 - MarketplaceConfig created and shared in `init`
+- ListingsRegistry created and shared in `init`
 - AdminCap transferred to deployer
 - SkillListed/SkillDelisted events emitted correctly
+- Listings registered/unregistered in ListingsRegistry on create/delist
 - `/move-code-quality` reports no issues
 
 ### Phase 2: Move Contracts — Purchases & Seal
@@ -1021,7 +1031,7 @@ async function decryptSkill(
 - PurchaseReceipt NFT minting on purchase
 - SellerVault with payment splitting (fee + seller)
 - seal_approve entry function
-- PackageListing with bundle discount
+- PackageListing with bundle discount (integrated with ListingsRegistry)
 - Integration tests across modules
 
 **Acceptance Criteria:**
@@ -1030,76 +1040,36 @@ async function decryptSkill(
 - seal_approve correctly validates receipt → skill mapping
 - seal_approve aborts on invalid access
 - Package discount computed correctly
+- Package create/delist registers/unregisters in ListingsRegistry
 - `/move-code-quality` reports no issues
 
-### Phase 3: Backend — Foundation
-
-**Deliverables:**
-- Node.js TypeScript project setup (Express or Fastify)
-- PostgreSQL schema migration scripts
-- REST endpoint stubs for all routes in section 6.1
-- Health check endpoint
-- Environment configuration
-
-**Acceptance Criteria:**
-- `npm run build` succeeds
-- Database migrations run cleanly
-- Health endpoint returns 200
-- TypeScript strict mode, no `any` types
-
-### Phase 4: Backend — Event Indexer
-
-**Deliverables:**
-- gRPC SubscribeCheckpoints streaming client
-- Event parsing for all 6 event types
-- PostgreSQL upsert logic for each event
-- Backfill from last-processed checkpoint on restart
-- Cursor persistence (last checkpoint in DB)
-
-**Acceptance Criteria:**
-- Indexer connects to testnet gRPC and streams
-- Events correctly parsed and stored
-- Restart resumes from last checkpoint
-- No duplicate entries on re-processing
-
-### Phase 5: Backend — Walrus Proxy & Search
-
-**Deliverables:**
-- POST /api/upload → Walrus blob store
-- GET /api/download/:blobId → Walrus blob fetch
-- Full-text search on /api/skills/search
-- Category filtering and pagination
-- Seller dashboard endpoints
-
-**Acceptance Criteria:**
-- Upload returns valid Walrus blob ID
-- Download returns correct encrypted bytes
-- Search returns relevant results
-- Pagination works with page tokens
-
-### Phase 6: Frontend — Core Pages
+### Phase 3: Frontend — Core Pages
 
 **Deliverables:**
 - Next.js project with Tailwind CSS setup
 - DAppKitProvider with SuiGrpcClient
+- Walrus proxy API routes (`/api/walrus/upload`, `/api/walrus/download/:blobId`)
 - Landing page with featured skills
-- Browse/search page with filters
-- Skill detail page
+- Browse/search page using ListingsRegistry discovery (gRPC `ListDynamicFields`)
+- Client-side tag filtering
+- Skill detail page (fetches SkillListing via gRPC)
 - Wallet connect flow
 
 **Acceptance Criteria:**
 - `npm run build` succeeds
 - Wallet connection works with Sui wallets
-- Skill browsing and search functional
+- Skill browsing via ListingsRegistry functional
+- Client-side filtering by tags works
+- Walrus proxy routes operational
 - Responsive design on mobile
 
-### Phase 7: Frontend — Purchase & Decrypt
+### Phase 4: Frontend — Purchase & Decrypt
 
 **Deliverables:**
 - Purchase flow (build PTB, sign, execute)
-- My purchases page (list owned PurchaseReceipts)
+- My purchases page (list owned PurchaseReceipts via gRPC)
 - Seal SessionKey management
-- Decrypt flow (fetch blob, build seal_approve PTB, decrypt)
+- Decrypt flow (fetch blob via Walrus proxy, build seal_approve PTB, decrypt)
 - File download after decryption
 
 **Acceptance Criteria:**
@@ -1108,26 +1078,26 @@ async function decryptSkill(
 - Decryption returns correct plaintext
 - SessionKey persisted in IndexedDB
 
-### Phase 8: Frontend — Seller Dashboard & Polish
+### Phase 5: Frontend — Seller Dashboard & Polish
 
 **Deliverables:**
-- Seller dashboard (my listings, revenue, renewals)
-- Create listing flow (upload + encrypt + on-chain)
-- Delist flow
+- Seller dashboard (my listings via gRPC, vault balance, renewal warnings)
+- Create listing flow (upload + encrypt + on-chain with ListingsRegistry)
+- Delist flow (with ListingsRegistry removal)
 - Package creation flow
-- Renewal alerts
+- Renewal warnings (frontend reads Walrus blob status)
 - Error handling and loading states
 
 **Acceptance Criteria:**
 - Seller can create, view, and delist listings
 - Revenue displayed correctly
-- Renewal warnings shown
+- Renewal warnings shown (frontend-only, from on-chain data)
 - Package creation with discount
 - Production-ready error handling
 
 ---
 
-## 11. Testing & Observability
+## 11. Testing
 
 ### Move Testing
 
@@ -1144,27 +1114,6 @@ sui move test --coverage         # with coverage report
 - Use `assert_eq!` over `assert!(a == b)`
 - Test error paths with `#[test, expected_failure(abort_code = N)]`
 
-### Backend Testing
-
-- Unit tests: Jest or Vitest
-- Integration tests: Against local PostgreSQL (testcontainers)
-- E2E tests: Against Sui testnet with test wallets
-
-### Frontend Testing
-
-- Component tests: React Testing Library
-- E2E tests: Playwright or Cypress against local dev environment
-
-### Observability
-
-| Signal | Tool | Notes |
-|--------|------|-------|
-| Backend logs | Structured JSON (pino) | Include checkpoint number, event type |
-| Indexer lag | Custom metric | `current_checkpoint - last_indexed_checkpoint` |
-| API latency | Express/Fastify middleware | p50, p95, p99 per endpoint |
-| Error rate | Sentry or equivalent | Frontend + backend |
-| Walrus blob health | Renewal monitor | Expiry tracking per listing |
-
 ---
 
 ## 12. Open Questions & Dependencies
@@ -1172,12 +1121,13 @@ sui move test --coverage         # with coverage report
 | # | Question | Impact | Status |
 |---|----------|--------|--------|
 | 1 | Walrus quilt API availability — is there a JS SDK for quilts? | Multi-file upload flow | Research needed |
-| 2 | Walrus storage pricing on mainnet — affects renewal cost estimation | Renewal monitor logic | TBD at mainnet launch |
+| 2 | Walrus storage pricing on mainnet — affects renewal cost estimation | Renewal warning logic | TBD at mainnet launch |
 | 3 | Seal key server object IDs for mainnet | Production deployment | Obtain from Mysten |
 | 4 | Should `PurchaseReceipt` have `store` ability for Kiosk integration? | Resale market possibility | Decided: `key` only for v1 |
-| 5 | Rate limiting strategy for the Walrus proxy endpoint | Abuse prevention | Design in Phase 5 |
-| 6 | Package purchase — should it verify all skills are active, or allow partial? | UX decision | Decided: all must be active |
-| 7 | SellerVault — one per seller globally, or one per listing? | Gas cost vs complexity | Decided: one per seller |
+| 5 | ListingsRegistry gas costs at scale — dynamic field enumeration performance | UX for large registries | Monitor during testnet |
+| 6 | `ListDynamicFields` pagination limits and UX impact | Browse page performance | Test with realistic data volumes |
+| 7 | Package purchase — should it verify all skills are active, or allow partial? | UX decision | Decided: all must be active |
+| 8 | SellerVault — one per seller globally, or one per listing? | Gas cost vs complexity | Decided: one per seller |
 
 ---
 
@@ -1200,7 +1150,7 @@ sui move test --coverage         # with coverage report
 - **Test addresses:** Valid hex only (A-F, not arbitrary letters)
 - **Expected failure:** Numeric abort codes, not `module::constant` references
 
-### TypeScript (Backend & Frontend)
+### TypeScript (Frontend)
 
 - Strict mode (`"strict": true` in tsconfig)
 - No `any` types — use proper interfaces
@@ -1213,9 +1163,7 @@ sui move test --coverage         # with coverage report
 
 - Conventional commits: `feat:`, `fix:`, `docs:`, `test:`, `chore:`
 - Move package at `/move/fast_and_furious/`
-- Backend at `/backend/`
 - Frontend at `/frontend/`
-- Shared types at `/shared/types/`
 
 ### Move.toml
 
@@ -1241,6 +1189,7 @@ These will be populated after deployment:
 MARKETPLACE_PACKAGE_ID  = "0x..."
 MARKETPLACE_CONFIG_ID   = "0x..."
 PACKAGE_VERSION_ID      = "0x..."
+LISTINGS_REGISTRY_ID    = "0x..."
 ADMIN_CAP_ID            = "0x..."
 ```
 
