@@ -11,6 +11,7 @@ export interface SkillListing {
   sealKeyId: string;
   createdAtEpoch: number;
   isActive: boolean;
+  isFinalized: boolean;
 }
 
 export interface PackageListing {

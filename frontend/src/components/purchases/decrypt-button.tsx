@@ -6,7 +6,7 @@ import { Transaction } from "@mysten/sui/transactions";
 import { fromHex } from "@mysten/sui/utils";
 import { Button } from "@/components/ui/button";
 import { useSessionKey } from "@/hooks/use-session-key";
-import { useCurrentClient } from "@mysten/dapp-kit-react";
+import { useCurrentAccount, useCurrentClient } from "@mysten/dapp-kit-react";
 import { getSealClient } from "@/lib/seal";
 import { MARKETPLACE_PACKAGE_ID, PACKAGE_VERSION_ID } from "@/lib/constants";
 
@@ -24,6 +24,7 @@ export function DecryptButton({
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const { getOrCreateSessionKey } = useSessionKey();
+  const account = useCurrentAccount();
   const suiClient = useCurrentClient();
 
   async function handleDecrypt() {
@@ -45,7 +46,9 @@ export function DecryptButton({
       const parsed = EncryptedObject.parse(encryptedBytes);
 
       // 4. Build seal_approve PTB
+      if (!account) throw new Error("Wallet not connected");
       const tx = new Transaction();
+      tx.setSender(account.address);
       tx.moveCall({
         target: `${MARKETPLACE_PACKAGE_ID}::seal_policy::seal_approve`,
         arguments: [

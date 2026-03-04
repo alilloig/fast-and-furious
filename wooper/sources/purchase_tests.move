@@ -13,7 +13,7 @@ use wooper::test_utils;
 
 // === Helpers ===
 
-/// Sets up marketplace + creates a skill listing as user1 + creates a vault for user1.
+/// Sets up marketplace + creates a skill listing (two-step) as user1 + creates a vault for user1.
 fun setup_skill_and_vault(scenario: &mut ts::Scenario) {
     marketplace::init_for_testing(scenario.ctx());
     scenario.next_tx(test_utils::user1());
@@ -23,24 +23,36 @@ fun setup_skill_and_vault(scenario: &mut ts::Scenario) {
 
     scenario.next_tx(test_utils::user1());
 
+    // Step 1: create (metadata only)
     let config = scenario.take_shared<MarketplaceConfig>();
-    let mut registry = scenario.take_shared<ListingsRegistry>();
-
     skill::create(
         &config,
-        &mut registry,
         b"AI Prompt Pack".to_string(),
         b"Premium AI prompts".to_string(),
         1_000_000_000, // 1 SUI
         b"prompts".to_string(),
         vector[b"ai".to_string()],
+        scenario.ctx(),
+    );
+    ts::return_shared(config);
+
+    // Step 2: finalize
+    scenario.next_tx(test_utils::user1());
+    let seller_cap = scenario.take_from_sender<SellerCap>();
+    let mut listing = scenario.take_shared<SkillListing>();
+    let mut registry = scenario.take_shared<ListingsRegistry>();
+
+    skill::finalize(
+        &seller_cap,
+        &mut listing,
+        &mut registry,
         b"blob_abc".to_string(),
         option::none(),
         vector[0u8, 1, 2, 3, 4],
-        scenario.ctx(),
     );
 
-    ts::return_shared(config);
+    scenario.return_to_sender(seller_cap);
+    ts::return_shared(listing);
     ts::return_shared(registry);
 }
 
@@ -264,31 +276,52 @@ fun purchase_package_success() {
     purchase::create_vault(scenario.ctx());
     scenario.next_tx(test_utils::user1());
 
-    // Create two skills
+    // Create + finalize Skill A
     let config = scenario.take_shared<MarketplaceConfig>();
-    let mut registry = scenario.take_shared<ListingsRegistry>();
-
     skill::create(
-        &config, &mut registry,
+        &config,
         b"Skill A".to_string(), b"desc".to_string(),
         500_000_000, b"cat".to_string(), vector[b"ai".to_string()],
-        b"blob_a".to_string(), option::none(), vector[0u8],
         scenario.ctx(),
     );
+    ts::return_shared(config);
+
+    scenario.next_tx(test_utils::user1());
+    let seller_cap_a = scenario.take_from_sender<SellerCap>();
+    let mut listing_a = scenario.take_shared<SkillListing>();
+    let mut registry = scenario.take_shared<ListingsRegistry>();
+    skill::finalize(
+        &seller_cap_a, &mut listing_a, &mut registry,
+        b"blob_a".to_string(), option::none(), vector[0u8],
+    );
+    scenario.return_to_sender(seller_cap_a);
+    ts::return_shared(listing_a);
+    ts::return_shared(registry);
+
+    // Create + finalize Skill B (separate tx group to avoid take_shared ambiguity)
+    scenario.next_tx(test_utils::user1());
+    let config = scenario.take_shared<MarketplaceConfig>();
     skill::create(
-        &config, &mut registry,
+        &config,
         b"Skill B".to_string(), b"desc".to_string(),
         500_000_000, b"cat".to_string(), vector[b"ai".to_string()],
-        b"blob_b".to_string(), option::none(), vector[1u8],
         scenario.ctx(),
     );
-
     ts::return_shared(config);
-    ts::return_shared(registry);
-    scenario.next_tx(test_utils::user1());
 
-    // Get skill IDs for the package
-    // We need to know the IDs — use a deterministic approach
+    scenario.next_tx(test_utils::user1());
+    let seller_cap_b = scenario.take_from_sender<SellerCap>();
+    let mut listing_b = scenario.take_shared<SkillListing>();
+    let mut registry = scenario.take_shared<ListingsRegistry>();
+    skill::finalize(
+        &seller_cap_b, &mut listing_b, &mut registry,
+        b"blob_b".to_string(), option::none(), vector[1u8],
+    );
+    scenario.return_to_sender(seller_cap_b);
+    ts::return_shared(listing_b);
+    ts::return_shared(registry);
+
+    scenario.next_tx(test_utils::user1());
     let config = scenario.take_shared<MarketplaceConfig>();
     let mut registry = scenario.take_shared<ListingsRegistry>();
 
