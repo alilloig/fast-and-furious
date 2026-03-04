@@ -11,6 +11,8 @@ const ENotSeller: u64 = 200;
 const EInvalidPrice: u64 = 201;
 const EWrongVersion: u64 = 202;
 const EAlreadyDelisted: u64 = 203;
+const EAlreadyFinalized: u64 = 204;
+const ENotFinalized: u64 = 205;
 
 // === Structs ===
 
@@ -29,6 +31,7 @@ public struct SkillListing has key {
     seal_key_id: vector<u8>,
     created_at_epoch: u64,
     is_active: bool,
+    is_finalized: bool,
 }
 
 /// Owned by the seller who created the listing. Proves seller identity for delist.
@@ -55,20 +58,18 @@ public struct SkillDelisted has copy, drop {
 
 // === Public Functions ===
 
-/// Create a new skill listing. SkillListing is shared. SellerCap is transferred to sender.
-/// Registers the listing in the ListingsRegistry with its tags.
+/// Create a new skill listing (step 1 of 2). SkillListing is shared but inactive.
+/// Walrus/Seal fields are empty — the seller must call `finalize` after encrypting
+/// and uploading content. This solves the chicken-and-egg problem: the listing ID
+/// (needed for the Seal key identity) is only known after this transaction executes.
 #[allow(lint(self_transfer))]
 public fun create(
     config: &MarketplaceConfig,
-    registry: &mut ListingsRegistry,
     title: String,
     description: String,
     price: u64,
     category: String,
     tags: vector<String>,
-    walrus_blob_id: String,
-    walrus_quilt_id: Option<String>,
-    seal_key_id: vector<u8>,
     ctx: &mut TxContext,
 ) {
     assert!(config.version() == 1, EWrongVersion);
@@ -82,14 +83,45 @@ public fun create(
         price,
         category,
         tags,
-        walrus_blob_id,
-        walrus_quilt_id,
-        seal_key_id,
+        walrus_blob_id: b"".to_string(),
+        walrus_quilt_id: option::none(),
+        seal_key_id: vector[],
         created_at_epoch: ctx.epoch(),
-        is_active: true,
+        is_active: false,
+        is_finalized: false,
     };
 
     let listing_id = object::id(&listing);
+
+    transfer::transfer(SellerCap {
+        id: object::new(ctx),
+        skill_listing_id: listing_id,
+    }, ctx.sender());
+
+    transfer::share_object(listing);
+}
+
+/// Finalize a skill listing (step 2 of 2). Populates Walrus/Seal data,
+/// activates the listing, and registers it in the ListingsRegistry.
+/// Called after the seller has encrypted content with Seal and uploaded to Walrus.
+public fun finalize(
+    seller_cap: &SellerCap,
+    listing: &mut SkillListing,
+    registry: &mut ListingsRegistry,
+    walrus_blob_id: String,
+    walrus_quilt_id: Option<String>,
+    seal_key_id: vector<u8>,
+) {
+    assert!(seller_cap.skill_listing_id == object::id(listing), ENotSeller);
+    assert!(!listing.is_finalized, EAlreadyFinalized);
+
+    listing.walrus_blob_id = walrus_blob_id;
+    listing.walrus_quilt_id = walrus_quilt_id;
+    listing.seal_key_id = seal_key_id;
+    listing.is_finalized = true;
+    listing.is_active = true;
+
+    let listing_id = object::id(listing);
 
     wooper::marketplace::register_listing(registry, listing_id, listing.tags);
 
@@ -101,13 +133,6 @@ public fun create(
         category: listing.category,
         walrus_blob_id: listing.walrus_blob_id,
     });
-
-    transfer::transfer(SellerCap {
-        id: object::new(ctx),
-        skill_listing_id: listing_id,
-    }, ctx.sender());
-
-    transfer::share_object(listing);
 }
 
 /// Delist a skill. Requires SellerCap. Sets is_active = false.
@@ -118,6 +143,7 @@ public fun delist(
     registry: &mut ListingsRegistry,
 ) {
     assert!(seller_cap.skill_listing_id == object::id(listing), ENotSeller);
+    assert!(listing.is_finalized, ENotFinalized);
     assert!(listing.is_active, EAlreadyDelisted);
 
     listing.is_active = false;
@@ -134,6 +160,7 @@ public fun delist(
 public fun seller(listing: &SkillListing): address { listing.seller }
 public fun price(listing: &SkillListing): u64 { listing.price }
 public fun is_active(listing: &SkillListing): bool { listing.is_active }
+public fun is_finalized(listing: &SkillListing): bool { listing.is_finalized }
 public fun seal_key_id(listing: &SkillListing): vector<u8> { listing.seal_key_id }
 public fun title(listing: &SkillListing): String { listing.title }
 public fun skill_listing_id(cap: &SellerCap): ID { cap.skill_listing_id }
@@ -161,6 +188,7 @@ public fun create_for_testing(
         seal_key_id: vector[0u8, 1, 2, 3],
         created_at_epoch: 0,
         is_active: true,
+        is_finalized: true,
     }
 }
 

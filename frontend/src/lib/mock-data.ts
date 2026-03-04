@@ -22,6 +22,7 @@ export const MOCK_SKILLS: SkillListing[] = [
     sealKeyId: "mock_key_1",
     createdAtEpoch: 100,
     isActive: true,
+    isFinalized: true,
   },
   {
     id: "0xmock_skill_2",
@@ -37,6 +38,7 @@ export const MOCK_SKILLS: SkillListing[] = [
     sealKeyId: "mock_key_2",
     createdAtEpoch: 101,
     isActive: true,
+    isFinalized: true,
   },
   {
     id: "0xmock_skill_3",
@@ -52,6 +54,7 @@ export const MOCK_SKILLS: SkillListing[] = [
     sealKeyId: "mock_key_3",
     createdAtEpoch: 102,
     isActive: true,
+    isFinalized: true,
   },
   {
     id: "0xmock_skill_4",
@@ -67,6 +70,7 @@ export const MOCK_SKILLS: SkillListing[] = [
     sealKeyId: "mock_key_4",
     createdAtEpoch: 103,
     isActive: true,
+    isFinalized: true,
   },
 ];
 

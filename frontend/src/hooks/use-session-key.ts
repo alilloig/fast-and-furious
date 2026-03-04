@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import { SessionKey } from "@mysten/seal";
 import type { ExportedSessionKey } from "@mysten/seal";
-import { get, set } from "idb-keyval";
+import { get, set, del } from "idb-keyval";
 import { useDAppKit, useCurrentAccount } from "@mysten/dapp-kit-react";
 import { useCurrentClient } from "@mysten/dapp-kit-react";
 import { MARKETPLACE_PACKAGE_ID } from "@/lib/constants";
@@ -23,13 +23,18 @@ export function useSessionKey() {
       return sessionKeyRef.current;
     }
 
-    // Try restoring from IndexedDB
+    // Try restoring from IndexedDB (import throws if expired or invalid)
     const stored = await get<ExportedSessionKey>(SESSION_KEY_STORE_KEY);
     if (stored) {
-      const restored = SessionKey.import(stored, suiClient);
-      if (!restored.isExpired()) {
-        sessionKeyRef.current = restored;
-        return restored;
+      try {
+        const restored = SessionKey.import(stored, suiClient);
+        if (!restored.isExpired()) {
+          sessionKeyRef.current = restored;
+          return restored;
+        }
+      } catch {
+        // Expired or incompatible (e.g. different package after redeployment) — discard
+        await del(SESSION_KEY_STORE_KEY);
       }
     }
 

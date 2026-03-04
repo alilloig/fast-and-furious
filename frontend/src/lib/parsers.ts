@@ -29,6 +29,7 @@ export function parseSkillListing(
     sealKeyId: json.seal_key_id as string,
     createdAtEpoch: Number(json.created_at_epoch as string),
     isActive: json.is_active as boolean,
+    isFinalized: json.is_finalized as boolean,
   };
 }
 
