@@ -1,4 +1,11 @@
-import type { SkillListing, PackageListing } from "./types";
+import type {
+  SkillListing,
+  PackageListing,
+  PurchaseReceipt,
+  SellerCap,
+  PackageSellerCap,
+  SellerVaultInfo,
+} from "./types";
 
 export const MOCK_SKILLS: SkillListing[] = [
   {
@@ -78,6 +85,25 @@ export const MOCK_PACKAGES: PackageListing[] = [
   },
 ];
 
+export const MOCK_RECEIPTS: PurchaseReceipt[] = [
+  {
+    id: "0xmock_receipt_1",
+    buyer: "0x1111222233334444555566667777888899990000",
+    skillIds: ["0xmock_skill_1"],
+    seller: "0xaa00bb11cc22dd33ee44ff5566778899aabbccdd",
+    amountPaid: 5_000_000_000n,
+    purchasedAtEpoch: 105,
+  },
+  {
+    id: "0xmock_receipt_2",
+    buyer: "0x1111222233334444555566667777888899990000",
+    skillIds: ["0xmock_skill_1", "0xmock_skill_4"],
+    seller: "0xaa00bb11cc22dd33ee44ff5566778899aabbccdd",
+    amountPaid: 12_000_000_000n,
+    purchasedAtEpoch: 106,
+  },
+];
+
 export const MOCK_CATEGORIES = [
   "Development",
   "Data Science",
@@ -86,3 +112,18 @@ export const MOCK_CATEGORIES = [
   "Writing",
   "Design",
 ];
+
+export const MOCK_SELLER_CAPS: SellerCap[] = [
+  { id: "0xmock_seller_cap_1", skillListingId: "0xmock_skill_1" },
+  { id: "0xmock_seller_cap_3", skillListingId: "0xmock_skill_3" },
+];
+
+export const MOCK_PACKAGE_SELLER_CAPS: PackageSellerCap[] = [
+  { id: "0xmock_pkg_seller_cap_1", packageListingId: "0xmock_package_1" },
+];
+
+export const MOCK_VAULT_INFO: SellerVaultInfo = {
+  id: "0xmock_vault_1",
+  seller: "0xaa00bb11cc22dd33ee44ff5566778899aabbccdd",
+  balance: 7_000_000_000n, // 7 SUI
+};

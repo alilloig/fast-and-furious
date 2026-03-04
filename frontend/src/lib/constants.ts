@@ -35,3 +35,7 @@ export const SEAL_THRESHOLD = 2;
 
 export const SKILL_TYPE = `${MARKETPLACE_PACKAGE_ID}::skill::SkillListing`;
 export const PACKAGE_LISTING_TYPE = `${MARKETPLACE_PACKAGE_ID}::package_listing::PackageListing`;
+export const PURCHASE_RECEIPT_TYPE = `${MARKETPLACE_PACKAGE_ID}::purchase::PurchaseReceipt`;
+export const SELLER_VAULT_TYPE = `${MARKETPLACE_PACKAGE_ID}::purchase::SellerVault`;
+export const SELLER_CAP_TYPE = `${MARKETPLACE_PACKAGE_ID}::skill::SellerCap`;
+export const PACKAGE_SELLER_CAP_TYPE = `${MARKETPLACE_PACKAGE_ID}::package_listing::PackageSellerCap`;

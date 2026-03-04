@@ -8,6 +8,7 @@ import { MobileNav } from "./mobile-nav";
 const NAV_LINKS = [
   { href: "/explore", label: "Explore" },
   { href: "/purchases", label: "My Purchases" },
+  { href: "/seller/dashboard", label: "Sell" },
 ];
 
 export function Header() {

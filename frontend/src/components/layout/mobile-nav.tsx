@@ -15,6 +15,7 @@ const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/explore", label: "Explore" },
   { href: "/purchases", label: "My Purchases" },
+  { href: "/seller/dashboard", label: "Sell" },
 ];
 
 export function MobileNav() {

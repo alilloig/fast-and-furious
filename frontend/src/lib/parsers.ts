@@ -1,4 +1,12 @@
-import type { SkillListing, PackageListing, MarketplaceConfig } from "./types";
+import type {
+  SkillListing,
+  PackageListing,
+  MarketplaceConfig,
+  PurchaseReceipt,
+  SellerCap,
+  PackageSellerCap,
+  SellerVaultInfo,
+} from "./types";
 
 /**
  * Parse a gRPC JSON object into a SkillListing.
@@ -60,10 +68,58 @@ export function parseMarketplaceConfig(
 }
 
 /**
+ * Parse a gRPC JSON object into a PurchaseReceipt.
+ */
+export function parsePurchaseReceipt(
+  objectId: string,
+  json: Record<string, unknown>,
+): PurchaseReceipt {
+  return {
+    id: objectId,
+    buyer: json.buyer as string,
+    skillIds: json.skill_ids as string[],
+    seller: json.seller as string,
+    amountPaid: BigInt(json.amount_paid as string),
+    purchasedAtEpoch: Number(json.purchased_at_epoch as string),
+  };
+}
+
+/**
  * Parse a Move Option<String> from gRPC JSON.
  * gRPC JSON encodes Option as null or the inner value.
  */
 function parseOptionString(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   return value as string;
+}
+
+export function parseSellerCap(
+  objectId: string,
+  json: Record<string, unknown>,
+): SellerCap {
+  return {
+    id: objectId,
+    skillListingId: json.skill_listing_id as string,
+  };
+}
+
+export function parsePackageSellerCap(
+  objectId: string,
+  json: Record<string, unknown>,
+): PackageSellerCap {
+  return {
+    id: objectId,
+    packageListingId: json.package_listing_id as string,
+  };
+}
+
+export function parseSellerVaultInfo(
+  objectId: string,
+  json: Record<string, unknown>,
+): SellerVaultInfo {
+  return {
+    id: objectId,
+    seller: json.seller as string,
+    balance: BigInt((json.balance as string) ?? "0"),
+  };
 }

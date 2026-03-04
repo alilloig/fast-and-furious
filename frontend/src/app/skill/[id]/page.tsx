@@ -1,20 +1,19 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
+import { useCurrentAccount } from "@mysten/dapp-kit-react";
+import { ConnectButton } from "@mysten/dapp-kit-react/ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { PriceDisplay } from "@/components/skills/price-display";
 import { useSkillDetail } from "@/hooks/use-skill-detail";
-import { truncateAddress } from "@/lib/utils";
+import { useSellerVault } from "@/hooks/use-seller-vault";
+import { usePurchaseSkill } from "@/hooks/use-purchase-skill";
+import { truncateAddress, formatSui } from "@/lib/utils";
 
 export default function SkillDetailPage({
   params,
@@ -22,7 +21,11 @@ export default function SkillDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const account = useCurrentAccount();
   const { data: skill, isLoading } = useSkillDetail(id);
+  const { data: vaultId, isLoading: vaultLoading } = useSellerVault(skill?.seller);
+  const purchaseMutation = usePurchaseSkill();
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
 
   if (isLoading) {
     return (
@@ -91,16 +94,50 @@ export default function SkillDetailPage({
 
           <Separator />
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-block">
-                <Button size="lg" disabled>
-                  Purchase
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>Coming in Phase 4</TooltipContent>
-          </Tooltip>
+          {purchaseSuccess ? (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-green-600">
+                Purchase successful!
+              </p>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/purchases">View My Purchases</Link>
+              </Button>
+            </div>
+          ) : !account ? (
+            <ConnectButton />
+          ) : vaultLoading ? (
+            <Button size="lg" disabled>
+              Loading...
+            </Button>
+          ) : !vaultId ? (
+            <Button size="lg" disabled>
+              Seller vault not set up
+            </Button>
+          ) : (
+            <div className="space-y-2">
+              <Button
+                size="lg"
+                disabled={purchaseMutation.isPending}
+                onClick={() =>
+                  purchaseMutation.mutate(
+                    { listingId: id, vaultId, price: skill!.price },
+                    { onSuccess: () => setPurchaseSuccess(true) },
+                  )
+                }
+              >
+                {purchaseMutation.isPending
+                  ? "Purchasing..."
+                  : `Purchase for ${formatSui(skill!.price)}`}
+              </Button>
+              {purchaseMutation.isError && (
+                <p className="text-sm text-destructive">
+                  {purchaseMutation.error instanceof Error
+                    ? purchaseMutation.error.message
+                    : "Purchase failed"}
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
