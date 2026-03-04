@@ -1,0 +1,38 @@
+export interface SkillListing {
+  id: string;
+  seller: string;
+  title: string;
+  description: string;
+  price: bigint;
+  category: string;
+  tags: string[];
+  walrusBlobId: string;
+  walrusQuiltId: string | null;
+  sealKeyId: string;
+  createdAtEpoch: number;
+  isActive: boolean;
+}
+
+export interface PackageListing {
+  id: string;
+  seller: string;
+  title: string;
+  description: string;
+  skillIds: string[];
+  discountBps: number;
+  price: bigint;
+  createdAtEpoch: number;
+  isActive: boolean;
+}
+
+export interface MarketplaceConfig {
+  id: string;
+  version: number;
+  feeBps: number;
+  feeRecipient: string;
+}
+
+export interface RegistryEntry {
+  listingId: string;
+  tags: string[];
+}
