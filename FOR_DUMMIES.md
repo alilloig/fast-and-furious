@@ -45,26 +45,16 @@ After following this guide you will be able to build and test the Move contracts
 
 ## Project Status
 
-The project has completed **Phases 1–2** of its 5-phase implementation plan. All Move smart contracts are fully implemented with comprehensive test suites. The frontend scaffold exists but is still at the default Next.js template stage — no marketplace UI has been built yet.
+All 5 phases of the implementation plan are complete. Move contracts and frontend are fully implemented and deployed to testnet.
 
 **What is complete:**
-- All 5 Move modules are fully implemented (not stubs) and compile cleanly
-- `Move.toml` is configured for edition 2024
-- Test suites for all modules (`marketplace_tests`, `skill_tests`, `purchase_tests`, `seal_policy_tests`, `package_listing_tests`)
-- Shared `test_utils` module with test addresses and helpers
-- Build artifacts exist in `move/wooper/build/`
-
-**What exists but is scaffolded:**
-- `frontend/` — Next.js 16 project with Tailwind CSS 4, shadcn/ui components, and Sui SDK dependencies installed. The landing page is still the default Next.js template.
-- `.env.example` with placeholder object IDs
-
-**What does not exist yet:**
-- Marketplace UI pages (explore, skill detail, purchase, seller dashboard)
-- Walrus proxy API routes (`/api/walrus/upload`, `/api/walrus/download`)
-- Seal encryption/decryption integration in the frontend
-- DAppKit provider setup in `layout.tsx`
-- Deployment scripts
-- Testnet deployment (all object IDs are `0x0` placeholders)
+- All 5 Move modules fully implemented and deployed to testnet
+- Comprehensive test suites for all modules (35+ tests)
+- Full frontend: explore page, skill/package detail, purchase flow, seller dashboard, decrypt/download
+- Walrus proxy API routes (upload, download, upload-quilt, download-quilt)
+- Seal encryption/decryption integration
+- DAppKit + SuiGrpcClient wallet integration
+- Testnet deployment with live object IDs in `frontend/.env`
 
 ---
 
@@ -72,16 +62,16 @@ The project has completed **Phases 1–2** of its 5-phase implementation plan. A
 
 ```bash
 # 1. Build the Move contracts
-cd move/wooper && sui move build
+cd wooper && sui move build
 
 # 2. Run all Move tests
 sui move test
 
 # 3. Start the frontend dev server
-cd ../../frontend && npm install && npm run dev
+cd ../frontend && npm install && npm run dev
 ```
 
-After step 2, all tests should pass. After step 3, the frontend is available at `http://localhost:3000` (default Next.js template — marketplace UI is not yet built).
+After step 2, all tests should pass. After step 3, the frontend is available at `http://localhost:3000`.
 
 ---
 
@@ -93,7 +83,7 @@ After step 2, all tests should pass. After step 3, the frontend is available at 
 │  Tailwind CSS 4 · @mysten/dapp-kit-react ^2.0           │
 │  @mysten/sui ^2.5 · TanStack Query ^5                   │
 │  shadcn/ui (Radix + lucide-react)                        │
-│  Next.js API Routes (Walrus proxy — not yet built)       │
+│  Next.js API Routes (Walrus proxy)                        │
 ├─────────────────────────────────────────────────────────┤
 │                  ON-CHAIN (Sui Move)                      │
 │                                                          │
@@ -218,7 +208,7 @@ Seal automatically prepends the `package_id`. The `seal_approve` function only r
 ### Move Contracts
 
 ```bash
-cd move/wooper
+cd wooper
 
 # Build
 sui move build
@@ -293,7 +283,7 @@ Pre-installed in `src/components/ui/`: `button`, `card`, `input`, `badge`, `skel
 
 ### Current State
 
-The layout (`layout.tsx`) uses Geist fonts but does **not** yet wrap children in `DAppKitProvider` or `QueryClientProvider`. The landing page (`page.tsx`) is the default Next.js template. Path alias `@/*` maps to `./src/*`.
+The layout uses `ClientLayout` → `ClientShell` (dynamic import with `ssr: false`) wrapping `DAppKitProvider` + `QueryClientProvider`. Path alias `@/*` maps to `./src/*`.
 
 ---
 
@@ -317,9 +307,9 @@ The four `NEXT_PUBLIC_*_ID` variables are placeholders (`0x0`) until the Move pa
 
 ## Key Commands
 
-**`cd move/wooper && sui move build`** — Compile the Move package. Run this after any contract changes to verify they compile.
+**`cd wooper && sui move build`** — Compile the Move package. Run this after any contract changes to verify they compile.
 
-**`cd move/wooper && sui move test`** — Run all Move unit tests. The test suite has tests across 5 test modules covering happy paths and error cases.
+**`cd wooper && sui move test`** — Run all Move unit tests. The test suite has tests across 5 test modules covering happy paths and error cases.
 
 **`cd frontend && npm run dev`** — Start the Next.js development server at `http://localhost:3000`.
 
@@ -340,7 +330,7 @@ The four `NEXT_PUBLIC_*_ID` variables are placeholders (`0x0`) until the Move pa
 - **Owned object** — A Sui object owned by a specific address. Only the owner can use it in transactions. Used for capabilities and purchase receipts.
 - **Hot potato** — A Move pattern where a struct without `drop` ability must be explicitly consumed, enforcing function call sequences.
 - **SessionKey** — A Seal concept: a temporary key signed by the wallet that avoids repeated wallet popups during a decryption session.
-- **gRPC** — The RPC protocol used to communicate with Sui full nodes. This project uses `SuiGrpcClient` exclusively (no JSON-RPC).
+- **gRPC** — The RPC protocol used to communicate with Sui full nodes. This project primarily uses `SuiGrpcClient`, with JSON-RPC fallback for vault lookup.
 - **shadcn/ui** — A component library that generates source code into your project (not an npm dependency at runtime). Components live in `src/components/ui/`.
 
 ---
@@ -349,19 +339,23 @@ The four `NEXT_PUBLIC_*_ID` variables are placeholders (`0x0`) until the Move pa
 
 | File | Description |
 |---|---|
-| `CLAUDE.md` | Full project spec: architecture, module designs, data flows, security model, implementation plan |
-| `move/wooper/Move.toml` | Move package manifest (edition 2024) |
-| `move/wooper/sources/marketplace.move` | Platform config, admin cap, version gating, listings registry (dynamic fields) |
-| `move/wooper/sources/skill.move` | Individual skill listing struct, create/delist functions, seller cap |
-| `move/wooper/sources/package_listing.move` | Bundled skill packages with discount pricing |
-| `move/wooper/sources/purchase.move` | Purchase receipts (NFT), seller vaults, payment splitting, vault withdrawals |
-| `move/wooper/sources/seal_policy.move` | Seal access control entry function for decryption gating |
-| `move/wooper/sources/test_utils.move` | Shared test addresses (ADMIN, USER1, USER2) and scenario helpers |
-| `move/wooper/sources/*_tests.move` | Test suites for each module (5 files) |
+| `CLAUDE.md` | Project conventions, architecture summary, key decisions, pointers to detailed docs |
+| `docs/architecture.md` | Seal flows, security model, data lifecycles, edge cases |
+| `docs/move-api-reference.md` | Module summaries, structs, error codes, events |
+| `docs/frontend-guide.md` | Hooks inventory, SSR patterns, Walrus routes, mock data |
+| `wooper/Move.toml` | Move package manifest (edition 2024) |
+| `wooper/sources/marketplace.move` | Platform config, admin cap, version gating, listings registry (dynamic fields) |
+| `wooper/sources/skill.move` | Individual skill listing struct, two-step create/finalize, delist, seller cap |
+| `wooper/sources/package_listing.move` | Bundled skill packages with discount pricing |
+| `wooper/sources/purchase.move` | Purchase receipts (NFT), seller vaults, payment splitting, vault withdrawals |
+| `wooper/sources/seal_policy.move` | Seal access control entry function for decryption gating |
+| `wooper/sources/test_utils.move` | Shared test addresses (ADMIN, USER1, USER2) and scenario helpers |
+| `wooper/sources/*_tests.move` | Test suites for each module (5 files) |
 | `frontend/package.json` | Frontend dependencies and scripts |
-| `frontend/.env.example` | Environment variable template with Sui object IDs and Walrus endpoints |
-| `frontend/src/app/layout.tsx` | Root layout (Geist fonts, no providers yet) |
-| `frontend/src/app/page.tsx` | Landing page (default Next.js template) |
-| `frontend/src/components/ui/` | Pre-installed shadcn/ui components (button, card, input, badge, etc.) |
-| `frontend/src/lib/utils.ts` | `cn()` utility for Tailwind class merging |
-| `.gitignore` | Ignores `move/wooper/build` |
+| `frontend/.env` | Environment variables with deployed Sui object IDs and Walrus endpoints |
+| `frontend/src/app/layout.tsx` | Root layout (Geist fonts, imports ClientLayout) |
+| `frontend/src/app/client-layout.tsx` | Dynamic import of ClientShell with ssr: false |
+| `frontend/src/hooks/` | 24 hooks for data fetching and transaction building |
+| `frontend/src/lib/constants.ts` | Package IDs, object IDs, Seal config, type strings |
+| `frontend/src/components/ui/` | shadcn/ui components (button, card, input, badge, etc.) |
+| `.gitignore` | Ignores `wooper/build` |
