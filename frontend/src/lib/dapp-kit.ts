@@ -11,8 +11,8 @@ function makeDAppKit() {
         network,
         baseUrl:
           network === "mainnet"
-            ? "https://sui-mainnet.mystenlabs.com"
-            : "https://sui-testnet.mystenlabs.com",
+            ? "https://fullnode.mainnet.sui.io:443"
+            : "https://fullnode.testnet.sui.io:443",
       });
     },
   });
