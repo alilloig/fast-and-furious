@@ -120,21 +120,27 @@ export function FileDropZone({
       }
 
       if (rejected.length > 0) {
+        const acceptedNote = valid.length > 0
+          ? ` ${valid.length} file${valid.length !== 1 ? "s" : ""} accepted.`
+          : " No valid files found.";
         setError(
-          `${rejected.length} file${rejected.length !== 1 ? "s" : ""} rejected (only ${acceptExtensions.join(", ")} allowed): ${rejected.slice(0, 3).join(", ")}${rejected.length > 3 ? "…" : ""}`,
+          `${rejected.length} file${rejected.length !== 1 ? "s" : ""} skipped (only ${acceptExtensions.join(", ")} allowed).${acceptedNote}`,
         );
       }
 
       if (valid.length === 0) return;
 
       const merged = [...files, ...valid].slice(0, maxFiles);
+
+      if (valid.length > maxFiles - files.length) {
+        setError(
+          `Only ${merged.length - files.length} of ${valid.length} valid files added (maximum ${maxFiles} files).`,
+        );
+      }
+
       const totalSize = merged.reduce((s, f) => s + f.size, 0);
       if (totalSize > maxTotalSize) {
         setError(`Total file size exceeds ${formatFileSize(maxTotalSize)}.`);
-        return;
-      }
-      if (merged.length > maxFiles) {
-        setError(`Maximum ${maxFiles} files allowed.`);
         return;
       }
 

@@ -49,12 +49,13 @@ export const WALRUS_DEFAULT_EPOCHS = 5;
 export const WALRUS_MIN_EPOCHS = 1;
 export const WALRUS_MAX_EPOCHS = 53; // from `walrus info`: max 53 epochs ahead
 
-export const MAX_FILES_PER_LISTING = 10;
+export const MAX_FILES_PER_LISTING = 1000;
 export const MAX_TOTAL_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
-export const ALLOWED_FILE_EXTENSIONS = [".md", ".yml", ".yaml", ".toml"];
+export const ALLOWED_FILE_EXTENSIONS = [".md", ".mdx", ".yml", ".yaml", ".toml"];
 
 export const ALLOWED_MIME_TYPES = [
   "text/markdown",
+  "text/mdx",
   "text/yaml",
   "application/x-yaml",
   "application/toml",

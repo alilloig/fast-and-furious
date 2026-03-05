@@ -107,7 +107,7 @@ function validateFiles(files: File[]): string | null {
       ? `.${f.name.split(".").pop()!.toLowerCase()}`
       : "";
     if (!ALLOWED_FILE_EXTENSIONS.includes(ext))
-      return `File type "${ext || "(no extension)"}" is not allowed. Only .md, .yml, .yaml, and .toml files are accepted.`;
+      return `File type "${ext || "(no extension)"}" is not allowed. Only ${ALLOWED_FILE_EXTENSIONS.join(", ")} files are accepted.`;
   }
   return null;
 }
@@ -417,8 +417,9 @@ export function CreatePlaybookForm() {
             )}
             <StorageCostEstimate estimate={storageEstimate} />
             <p className="text-xs text-muted-foreground">
-              Upload <code>.md</code>, <code>.yml</code>, <code>.yaml</code>, or{" "}
-              <code>.toml</code> files (up to {MAX_FILES_PER_LISTING} files, 50MB total).
+              Upload {ALLOWED_FILE_EXTENSIONS.map((ext, i) => (
+                <span key={ext}>{i > 0 && (i === ALLOWED_FILE_EXTENSIONS.length - 1 ? ", or " : ", ")}<code>{ext}</code></span>
+              ))} files (up to {MAX_FILES_PER_LISTING.toLocaleString()} files, 50MB total).
               Files are encrypted with Seal before upload. Only buyers with a
               valid purchase receipt can decrypt them.
             </p>
