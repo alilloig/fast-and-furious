@@ -7,7 +7,7 @@ use sui::sui::SUI;
 use std::unit_test::assert_eq;
 use wooper::marketplace::{Self, MarketplaceConfig, ListingsRegistry};
 use wooper::skill::{Self, SkillListing, SellerCap};
-use wooper::package_listing::{Self, PackageListing};
+
 use wooper::purchase::{Self, SellerVault, PurchaseReceipt};
 use wooper::test_utils;
 
@@ -267,115 +267,6 @@ fun withdraw_insufficient_balance_fails() {
     let mut vault = scenario.take_shared<SellerVault>();
     let _withdrawn = purchase::withdraw(&mut vault, 1_000_000, scenario.ctx());
     abort 0
-}
-
-// === purchase_package tests ===
-
-#[test]
-fun purchase_package_success() {
-    let mut scenario = test_utils::begin();
-    marketplace::init_for_testing(scenario.ctx());
-    scenario.next_tx(test_utils::user1());
-
-    // Create vault
-    purchase::create_vault(scenario.ctx());
-    scenario.next_tx(test_utils::user1());
-
-    // Create + finalize Skill A
-    let config = scenario.take_shared<MarketplaceConfig>();
-    skill::create(
-        &config,
-        b"Skill A".to_string(), b"desc".to_string(),
-        500_000_000, b"cat".to_string(), vector[b"ai".to_string()],
-        scenario.ctx(),
-    );
-    ts::return_shared(config);
-
-    scenario.next_tx(test_utils::user1());
-    let seller_cap_a = scenario.take_from_sender<SellerCap>();
-    let mut listing_a = scenario.take_shared<SkillListing>();
-    let mut registry = scenario.take_shared<ListingsRegistry>();
-    skill::finalize(
-        &seller_cap_a, &mut listing_a, &mut registry,
-        b"blob_a".to_string(), option::none(), vector[b"skill_a.txt".to_string()], vector[0u8],
-        b"0xblobobj_a".to_string(), 50,
-        vector[0xAA, 0xBB, 0xCC], 42,
-    );
-    scenario.return_to_sender(seller_cap_a);
-    ts::return_shared(listing_a);
-    ts::return_shared(registry);
-
-    // Create + finalize Skill B (separate tx group to avoid take_shared ambiguity)
-    scenario.next_tx(test_utils::user1());
-    let config = scenario.take_shared<MarketplaceConfig>();
-    skill::create(
-        &config,
-        b"Skill B".to_string(), b"desc".to_string(),
-        500_000_000, b"cat".to_string(), vector[b"ai".to_string()],
-        scenario.ctx(),
-    );
-    ts::return_shared(config);
-
-    scenario.next_tx(test_utils::user1());
-    let seller_cap_b = scenario.take_from_sender<SellerCap>();
-    let mut listing_b = scenario.take_shared<SkillListing>();
-    let mut registry = scenario.take_shared<ListingsRegistry>();
-    skill::finalize(
-        &seller_cap_b, &mut listing_b, &mut registry,
-        b"blob_b".to_string(), option::none(), vector[b"skill_b.txt".to_string()], vector[1u8],
-        b"0xblobobj_b".to_string(), 50,
-        vector[0xAA, 0xBB, 0xCC], 42,
-    );
-    scenario.return_to_sender(seller_cap_b);
-    ts::return_shared(listing_b);
-    ts::return_shared(registry);
-
-    scenario.next_tx(test_utils::user1());
-    let config = scenario.take_shared<MarketplaceConfig>();
-    let mut registry = scenario.take_shared<ListingsRegistry>();
-
-    // Create package: 2 skills totaling 1 SUI, 10% discount → price = 900_000_000
-    let skill_id_a = object::id_from_address(@0x01); // placeholder
-    let skill_id_b = object::id_from_address(@0x02);
-
-    package_listing::create(
-        &config, &mut registry,
-        b"AI Bundle".to_string(), b"Two skills bundled".to_string(),
-        vector[skill_id_a, skill_id_b],
-        900_000_000, // pre-computed discounted price
-        1_000, // 10% discount
-        vector[b"bundle".to_string()],
-        scenario.ctx(),
-    );
-
-    ts::return_shared(config);
-    ts::return_shared(registry);
-    scenario.next_tx(test_utils::user2());
-
-    // Purchase the package
-    let config = scenario.take_shared<MarketplaceConfig>();
-    let package = scenario.take_shared<PackageListing>();
-    let mut vault = scenario.take_shared<SellerVault>();
-    let payment = coin::mint_for_testing<SUI>(900_000_000, scenario.ctx());
-
-    purchase::purchase_package(&config, &package, &mut vault, payment, scenario.ctx());
-
-    // Fee: 900_000_000 * 250 / 10_000 = 22_500_000
-    // Revenue: 900_000_000 - 22_500_000 = 877_500_000
-    assert_eq!(vault.balance(), 877_500_000);
-
-    ts::return_shared(config);
-    ts::return_shared(package);
-    ts::return_shared(vault);
-    scenario.next_tx(test_utils::user2());
-
-    // Receipt should have both skill IDs
-    let receipt = scenario.take_from_sender<PurchaseReceipt>();
-    assert_eq!(receipt.skill_ids().length(), 2);
-    assert_eq!(receipt.amount_paid(), 900_000_000);
-    scenario.return_to_sender(receipt);
-
-    scenario.end();
 }
 
 #[test]

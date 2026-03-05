@@ -33,12 +33,10 @@ export const SEAL_SERVER_CONFIGS = [
 
 export const SEAL_THRESHOLD = 2;
 
-export const SKILL_TYPE = `${MARKETPLACE_PACKAGE_ID}::skill::SkillListing`;
-export const PACKAGE_LISTING_TYPE = `${MARKETPLACE_PACKAGE_ID}::package_listing::PackageListing`;
+export const PLAYBOOK_TYPE = `${MARKETPLACE_PACKAGE_ID}::skill::SkillListing`;
 export const PURCHASE_RECEIPT_TYPE = `${MARKETPLACE_PACKAGE_ID}::purchase::PurchaseReceipt`;
 export const SELLER_VAULT_TYPE = `${MARKETPLACE_PACKAGE_ID}::purchase::SellerVault`;
 export const SELLER_CAP_TYPE = `${MARKETPLACE_PACKAGE_ID}::skill::SellerCap`;
-export const PACKAGE_SELLER_CAP_TYPE = `${MARKETPLACE_PACKAGE_ID}::package_listing::PackageSellerCap`;
 
 // --- Walrus Storage Estimation ---
 export const WALRUS_ENCODING_FACTOR = 5;
@@ -53,8 +51,16 @@ export const WALRUS_MAX_EPOCHS = 53; // from `walrus info`: max 53 epochs ahead
 
 export const MAX_FILES_PER_LISTING = 10;
 export const MAX_TOTAL_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
-export const ALLOWED_FILE_EXTENSIONS = [
-  ".txt", ".md", ".json", ".yaml", ".yml", ".toml",
-  ".js", ".ts", ".py", ".sh", ".xml", ".csv",
-  ".prompt", ".agent", ".config",
+export const ALLOWED_FILE_EXTENSIONS = [".md", ".yml", ".yaml", ".toml"];
+
+export const ALLOWED_MIME_TYPES = [
+  "text/markdown",
+  "text/yaml",
+  "application/x-yaml",
+  "application/toml",
 ];
+
+export const FILE_ACCEPT_STRING = [
+  ...ALLOWED_FILE_EXTENSIONS,
+  ...ALLOWED_MIME_TYPES,
+].join(",");

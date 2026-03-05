@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Wooper — AI Skills Marketplace",
+  title: "Wooper — AI Playbooks Marketplace",
   description:
-    "A decentralized marketplace for buying and selling AI skills on Sui.",
+    "A decentralized marketplace for buying and selling AI playbooks on Sui.",
 };
 
 export default function RootLayout({

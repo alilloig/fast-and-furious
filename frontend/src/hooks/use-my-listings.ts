@@ -2,22 +2,22 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { IS_DEPLOYED } from "@/lib/constants";
-import { parseSkillListing } from "@/lib/parsers";
-import type { SkillListing, SellerCap } from "@/lib/types";
-import { MOCK_SKILLS, MOCK_SELLER_CAPS } from "@/lib/mock-data";
+import { parsePlaybookListing } from "@/lib/parsers";
+import type { PlaybookListing, SellerCap } from "@/lib/types";
+import { MOCK_PLAYBOOKS, MOCK_SELLER_CAPS } from "@/lib/mock-data";
 import { useSuiClient } from "./use-sui-client";
 import { useSellerCaps } from "./use-seller-caps";
 
 export interface MyListing {
   cap: SellerCap;
-  listing: SkillListing;
+  listing: PlaybookListing;
 }
 
 export function useMyListings() {
   const client = useSuiClient();
   const { data: caps } = useSellerCaps();
 
-  const listingIds = caps?.map((c) => c.skillListingId) ?? [];
+  const listingIds = caps?.map((c) => c.playbookListingId) ?? [];
 
   return useQuery<MyListing[]>({
     queryKey: ["my-listings", listingIds],
@@ -36,8 +36,8 @@ export function useMyListings() {
           if (obj instanceof Error) continue;
           if (!obj.type.includes("::skill::SkillListing")) continue;
           if (!obj.json) continue;
-          const listing = parseSkillListing(obj.objectId, obj.json);
-          const cap = caps!.find((c) => c.skillListingId === listing.id);
+          const listing = parsePlaybookListing(obj.objectId, obj.json);
+          const cap = caps!.find((c) => c.playbookListingId === listing.id);
           if (cap) results.push({ cap, listing });
         }
       }
@@ -48,7 +48,7 @@ export function useMyListings() {
       ? undefined
       : MOCK_SELLER_CAPS.map((cap) => ({
           cap,
-          listing: MOCK_SKILLS.find((s) => s.id === cap.skillListingId)!,
+          listing: MOCK_PLAYBOOKS.find((s) => s.id === cap.playbookListingId)!,
         })).filter((entry) => entry.listing),
   });
 }

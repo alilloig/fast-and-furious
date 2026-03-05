@@ -9,7 +9,7 @@ use sui::coin::{Self, Coin};
 use sui::balance::{Self, Balance};
 use wooper::marketplace::MarketplaceConfig;
 use wooper::skill::SkillListing;
-use wooper::package_listing::PackageListing;
+
 
 // === Errors ===
 const EListingNotActive: u64 = 400;
@@ -126,70 +126,6 @@ public fun purchase_skill(
         buyer: ctx.sender(),
         skill_ids: vector[object::id(listing)],
         seller: listing.seller(),
-        total_paid: price,
-        platform_fee: platform_fee_amount,
-        seller_revenue,
-    });
-
-    transfer::transfer(receipt, ctx.sender());
-}
-
-/// Purchase a package (bundle). Uses the package's pre-computed price.
-/// Mints a PurchaseReceipt with all skill_ids from the package.
-#[allow(lint(self_transfer))]
-public fun purchase_package(
-    config: &MarketplaceConfig,
-    package: &PackageListing,
-    vault: &mut SellerVault,
-    mut payment: Coin<SUI>,
-    ctx: &mut TxContext,
-) {
-    assert!(package.is_active(), EListingNotActive);
-    assert!(vault.seller == package.seller(), EVaultSellerMismatch);
-
-    let price = package.price();
-    assert!(payment.value() >= price, EInsufficientPayment);
-
-    // Compute fee split
-    let platform_fee_amount = (price * config.fee_bps()) / 10_000;
-    let seller_revenue = price - platform_fee_amount;
-
-    // Platform fee to fee_recipient
-    if (platform_fee_amount > 0) {
-        transfer::public_transfer(
-            payment.split(platform_fee_amount, ctx),
-            config.fee_recipient(),
-        );
-    };
-
-    // Seller revenue to vault
-    vault.balance.join(payment.split(seller_revenue, ctx).into_balance());
-
-    // Return change to buyer (or destroy zero coin)
-    if (payment.value() > 0) {
-        transfer::public_transfer(payment, ctx.sender());
-    } else {
-        coin::destroy_zero(payment);
-    };
-
-    // Mint receipt with all skill IDs from the package
-    let skill_ids = package.skill_ids();
-    let receipt = PurchaseReceipt {
-        id: object::new(ctx),
-        buyer: ctx.sender(),
-        skill_ids,
-        seller: package.seller(),
-        amount_paid: price,
-        purchased_at_epoch: ctx.epoch(),
-        walrus_blob_id: b"".to_string(),
-    };
-    let receipt_id = object::id(&receipt);
-
-    sui::event::emit(SkillPurchased {
-        receipt_id,
-        buyer: ctx.sender(),
-        skill_ids: package.skill_ids(),
-        seller: package.seller(),
         total_paid: price,
         platform_fee: platform_fee_amount,
         seller_revenue,

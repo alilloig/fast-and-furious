@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { SkillCard } from "@/components/skills/skill-card";
-import { PackageCard } from "@/components/skills/package-card";
-import { SkillGrid } from "@/components/skills/skill-grid";
+import { PlaybookCard } from "@/components/skills/playbook-card";
+import { PlaybookGrid } from "@/components/skills/playbook-grid";
 import {
   ListingFilters,
   type ListingType,
@@ -12,8 +11,7 @@ import {
 import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { useListingsRegistry } from "@/hooks/use-listings-registry";
-import { useSkillListings } from "@/hooks/use-skill-listings";
-import { usePackageListings } from "@/hooks/use-package-listings";
+import { usePlaybookListings } from "@/hooks/use-playbook-listings";
 
 export default function ExplorePage() {
   const [search, setSearch] = useState("");
@@ -23,14 +21,10 @@ export default function ExplorePage() {
 
   const { data: entries } = useListingsRegistry();
   const listingIds = entries?.map((e) => e.listingId) ?? [];
-  const { data: skills, isLoading: skillsLoading } = useSkillListings(listingIds);
-  const { data: packages, isLoading: packagesLoading } = usePackageListings(listingIds);
+  const { data: playbooks, isLoading } = usePlaybookListings(listingIds);
 
-  const isLoading = skillsLoading || packagesLoading;
-
-  const filteredSkills = useMemo(() => {
-    if (type === "packages") return [];
-    let result = skills ?? [];
+  const filteredPlaybooks = useMemo(() => {
+    let result = playbooks ?? [];
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -47,26 +41,7 @@ export default function ExplorePage() {
     if (sort === "price-desc") result = [...result].sort((a, b) => Number(b.price - a.price));
     if (sort === "newest") result = [...result].sort((a, b) => b.createdAtEpoch - a.createdAtEpoch);
     return result;
-  }, [skills, search, category, type, sort]);
-
-  const filteredPackages = useMemo(() => {
-    if (type === "skills") return [];
-    let result = packages ?? [];
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q),
-      );
-    }
-    if (sort === "price-asc") result = [...result].sort((a, b) => Number(a.price - b.price));
-    if (sort === "price-desc") result = [...result].sort((a, b) => Number(b.price - a.price));
-    if (sort === "newest") result = [...result].sort((a, b) => b.createdAtEpoch - a.createdAtEpoch);
-    return result;
-  }, [packages, search, type, sort]);
-
-  const hasResults = filteredSkills.length > 0 || filteredPackages.length > 0;
+  }, [playbooks, search, category, sort]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -85,20 +60,17 @@ export default function ExplorePage() {
       <div className="mt-8">
         {isLoading ? (
           <LoadingSkeleton />
-        ) : !hasResults ? (
+        ) : filteredPlaybooks.length === 0 ? (
           <EmptyState
             title="No results found"
             description="Try adjusting your filters or search terms."
           />
         ) : (
-          <SkillGrid>
-            {filteredSkills.map((skill) => (
-              <SkillCard key={skill.id} skill={skill} />
+          <PlaybookGrid>
+            {filteredPlaybooks.map((playbook) => (
+              <PlaybookCard key={playbook.id} playbook={playbook} />
             ))}
-            {filteredPackages.map((pkg) => (
-              <PackageCard key={pkg.id} pkg={pkg} />
-            ))}
-          </SkillGrid>
+          </PlaybookGrid>
         )}
       </div>
     </div>

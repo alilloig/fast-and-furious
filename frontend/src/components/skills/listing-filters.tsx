@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MOCK_CATEGORIES } from "@/lib/mock-data";
 
-export type ListingType = "all" | "skills" | "packages";
+export type ListingType = "all" | "playbooks";
 export type SortOption = "newest" | "price-asc" | "price-desc";
 
 interface ListingFiltersProps {
@@ -39,7 +39,7 @@ export function ListingFilters({
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row">
         <Input
-          placeholder="Search skills..."
+          placeholder="Search playbooks..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="sm:max-w-xs"
@@ -69,14 +69,14 @@ export function ListingFilters({
         </Select>
       </div>
       <div className="flex flex-wrap gap-2">
-        {(["all", "skills", "packages"] as const).map((t) => (
+        {(["all", "playbooks"] as const).map((t) => (
           <Badge
             key={t}
             variant={type === t ? "default" : "outline"}
             className="cursor-pointer"
             onClick={() => onTypeChange(t)}
           >
-            {t === "all" ? "All" : t === "skills" ? "Skills" : "Packages"}
+            {t === "all" ? "All" : "Playbooks"}
           </Badge>
         ))}
       </div>

@@ -14,28 +14,28 @@ import { PriceDisplay } from "@/components/skills/price-display";
 import { WalrusScanLink } from "@/components/walrus-scan-link";
 import { StorageStatusBadge } from "@/components/storage-status-badge";
 import { DecryptButton } from "@/components/purchases/decrypt-button";
-import { useSkillDetail } from "@/hooks/use-skill-detail";
+import { usePlaybookDetail } from "@/hooks/use-playbook-detail";
 import { useSellerVault } from "@/hooks/use-seller-vault";
-import { usePurchaseSkill } from "@/hooks/use-purchase-skill";
+import { usePurchasePlaybook } from "@/hooks/use-purchase-playbook";
 import { usePurchaseReceipts } from "@/hooks/use-purchase-receipts";
 import { useWalrusEpoch } from "@/hooks/use-current-epoch";
 import { truncateAddress, formatSui } from "@/lib/utils";
 
-export default function SkillDetailPage({
+export default function PlaybookDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
   const account = useCurrentAccount();
-  const { data: skill, isLoading } = useSkillDetail(id);
-  const { data: vaultId, isLoading: vaultLoading } = useSellerVault(skill?.seller);
-  const purchaseMutation = usePurchaseSkill();
+  const { data: playbook, isLoading } = usePlaybookDetail(id);
+  const { data: vaultId, isLoading: vaultLoading } = useSellerVault(playbook?.seller);
+  const purchaseMutation = usePurchasePlaybook();
   const { data: receipts } = usePurchaseReceipts();
   const { data: epochInfo } = useWalrusEpoch();
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
 
-  const owningReceipt = receipts?.find((r) => r.skillIds.includes(id));
+  const owningReceipt = receipts?.find((r) => r.playbookIds.includes(id));
   const alreadyPurchased = !!owningReceipt;
 
   if (isLoading) {
@@ -47,10 +47,10 @@ export default function SkillDetailPage({
     );
   }
 
-  if (!skill) {
+  if (!playbook) {
     return (
       <div className="container mx-auto max-w-3xl px-4 py-8 text-center">
-        <h1 className="text-2xl font-bold">Skill not found</h1>
+        <h1 className="text-2xl font-bold">Playbook not found</h1>
         <Button asChild variant="ghost" className="mt-4">
           <Link href="/explore">Back to Explore</Link>
         </Button>
@@ -67,30 +67,30 @@ export default function SkillDetailPage({
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
-            <CardTitle className="text-2xl">{skill.title}</CardTitle>
-            <Badge variant="secondary">{skill.category}</Badge>
+            <CardTitle className="text-2xl">{playbook.title}</CardTitle>
+            <Badge variant="secondary">{playbook.category}</Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <p className="text-muted-foreground">{skill.description}</p>
+          <p className="text-muted-foreground">{playbook.description}</p>
 
           <div className="flex flex-wrap gap-2">
-            {skill.tags.map((tag) => (
+            {playbook.tags.map((tag) => (
               <Badge key={tag} variant="outline">
                 {tag}
               </Badge>
             ))}
           </div>
 
-          {skill.fileNames.length > 0 && (
+          {playbook.fileNames.length > 0 && (
             <>
               <Separator />
               <div>
                 <div className="mb-2 text-sm font-medium">
-                  Files Included ({skill.fileNames.length})
+                  Files Included ({playbook.fileNames.length})
                 </div>
                 <div className="space-y-1">
-                  {skill.fileNames.map((name) => (
+                  {playbook.fileNames.map((name) => (
                     <div
                       key={name}
                       className="rounded border px-3 py-1.5 font-mono text-sm"
@@ -108,25 +108,25 @@ export default function SkillDetailPage({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <div className="text-sm text-muted-foreground">Price</div>
-              <PriceDisplay price={skill.price} className="text-xl font-bold" />
+              <PriceDisplay price={playbook.price} className="text-xl font-bold" />
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Seller</div>
-              <div className="font-mono text-sm">{truncateAddress(skill.seller, 8)}</div>
+              <div className="font-mono text-sm">{truncateAddress(playbook.seller, 8)}</div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Listed Epoch</div>
-              <div className="text-sm">{skill.createdAtEpoch}</div>
+              <div className="text-sm">{playbook.createdAtEpoch}</div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Storage ID</div>
-              <div className="truncate font-mono text-sm">{skill.walrusBlobId}</div>
+              <div className="truncate font-mono text-sm">{playbook.walrusBlobId}</div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Storage Status</div>
               <div className="mt-1">
                 <StorageStatusBadge
-                  storageEndEpoch={skill.storageEndEpoch}
+                  storageEndEpoch={playbook.storageEndEpoch}
                   epochInfo={epochInfo}
                 />
               </div>
@@ -140,18 +140,18 @@ export default function SkillDetailPage({
               <div className="flex items-center gap-2 text-green-600">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
                 <span className="text-sm font-medium">
-                  {purchaseSuccess ? "Purchase successful!" : "You own this skill"}
+                  {purchaseSuccess ? "Purchase successful!" : "You own this playbook"}
                 </span>
               </div>
               {owningReceipt && (
                 <DecryptButton
                   receiptId={owningReceipt.id}
                   receipt={owningReceipt}
-                  skill={skill!}
-                  walrusBlobId={skill!.walrusBlobId}
-                  walrusQuiltId={skill!.walrusQuiltId}
-                  fileNames={skill!.fileNames}
-                  skillTitle={skill!.title}
+                  skill={playbook!}
+                  walrusBlobId={playbook!.walrusBlobId}
+                  walrusQuiltId={playbook!.walrusQuiltId}
+                  fileNames={playbook!.fileNames}
+                  skillTitle={playbook!.title}
                 />
               )}
               <Button asChild variant="ghost" size="sm" className="h-auto p-0 text-sm text-muted-foreground hover:text-foreground">
@@ -175,14 +175,14 @@ export default function SkillDetailPage({
                 disabled={purchaseMutation.isPending}
                 onClick={() =>
                   purchaseMutation.mutate(
-                    { listingId: id, vaultId, price: skill!.price },
+                    { listingId: id, vaultId, price: playbook!.price },
                     { onSuccess: () => setPurchaseSuccess(true) },
                   )
                 }
               >
                 {purchaseMutation.isPending
                   ? "Purchasing..."
-                  : `Purchase for ${formatSui(skill!.price)}`}
+                  : `Purchase for ${formatSui(playbook!.price)}`}
               </Button>
               {purchaseMutation.isError && (
                 <p className="text-sm text-destructive">

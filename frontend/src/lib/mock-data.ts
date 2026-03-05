@@ -1,13 +1,11 @@
 import type {
-  SkillListing,
-  PackageListing,
+  PlaybookListing,
   PurchaseReceipt,
   SellerCap,
-  PackageSellerCap,
   SellerVaultInfo,
 } from "./types";
 
-export const MOCK_SKILLS: SkillListing[] = [
+export const MOCK_PLAYBOOKS: PlaybookListing[] = [
   {
     id: "0xmock_skill_1",
     seller: "0xaa00bb11cc22dd33ee44ff5566778899aabbccdd",
@@ -82,7 +80,7 @@ export const MOCK_SKILLS: SkillListing[] = [
     tags: ["audit", "smart-contract", "security", "agent"],
     walrusBlobId: "mock_blob_4",
     walrusQuiltId: "mock_quilt_1",
-    fileNames: ["auditor_agent.md", "security_rules.json", "report_template.md"],
+    fileNames: ["auditor_agent.md", "security_rules.yml", "report_template.md"],
     sealKeyId: "mock_key_4",
     walrusBlobObjectId: "0xmock_blob_obj_4",
     storageEndEpoch: 153,
@@ -94,26 +92,11 @@ export const MOCK_SKILLS: SkillListing[] = [
   },
 ];
 
-export const MOCK_PACKAGES: PackageListing[] = [
-  {
-    id: "0xmock_package_1",
-    seller: "0xaa00bb11cc22dd33ee44ff5566778899aabbccdd",
-    title: "Developer Toolkit Bundle",
-    description:
-      "Get the Code Review Agent and Smart Contract Auditor together at a 20% discount. Everything you need for secure development.",
-    skillIds: ["0xmock_skill_1", "0xmock_skill_4"],
-    discountBps: 2000, // 20%
-    price: 12_000_000_000n, // 12 SUI (15 - 20%)
-    createdAtEpoch: 104,
-    isActive: true,
-  },
-];
-
 export const MOCK_RECEIPTS: PurchaseReceipt[] = [
   {
     id: "0xmock_receipt_1",
     buyer: "0x1111222233334444555566667777888899990000",
-    skillIds: ["0xmock_skill_1"],
+    playbookIds: ["0xmock_skill_1"],
     seller: "0xaa00bb11cc22dd33ee44ff5566778899aabbccdd",
     amountPaid: 5_000_000_000n,
     purchasedAtEpoch: 105,
@@ -122,7 +105,7 @@ export const MOCK_RECEIPTS: PurchaseReceipt[] = [
   {
     id: "0xmock_receipt_2",
     buyer: "0x1111222233334444555566667777888899990000",
-    skillIds: ["0xmock_skill_1", "0xmock_skill_4"],
+    playbookIds: ["0xmock_skill_1", "0xmock_skill_4"],
     seller: "0xaa00bb11cc22dd33ee44ff5566778899aabbccdd",
     amountPaid: 12_000_000_000n,
     purchasedAtEpoch: 106,
@@ -140,12 +123,8 @@ export const MOCK_CATEGORIES = [
 ];
 
 export const MOCK_SELLER_CAPS: SellerCap[] = [
-  { id: "0xmock_seller_cap_1", skillListingId: "0xmock_skill_1" },
-  { id: "0xmock_seller_cap_3", skillListingId: "0xmock_skill_3" },
-];
-
-export const MOCK_PACKAGE_SELLER_CAPS: PackageSellerCap[] = [
-  { id: "0xmock_pkg_seller_cap_1", packageListingId: "0xmock_package_1" },
+  { id: "0xmock_seller_cap_1", playbookListingId: "0xmock_skill_1" },
+  { id: "0xmock_seller_cap_3", playbookListingId: "0xmock_skill_3" },
 ];
 
 export const MOCK_VAULT_INFO: SellerVaultInfo = {

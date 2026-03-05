@@ -5,17 +5,17 @@ import { useDAppKit } from "@mysten/dapp-kit-react";
 import { Transaction } from "@mysten/sui/transactions";
 import { MARKETPLACE_PACKAGE_ID, LISTINGS_REGISTRY_ID } from "@/lib/constants";
 
-interface DelistSkillArgs {
+interface DelistPlaybookArgs {
   listingId: string;
   sellerCapId: string;
 }
 
-export function useDelistSkill() {
+export function useDelistPlaybook() {
   const dAppKit = useDAppKit();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ listingId, sellerCapId }: DelistSkillArgs) => {
+    mutationFn: async ({ listingId, sellerCapId }: DelistPlaybookArgs) => {
       const tx = new Transaction();
       tx.moveCall({
         target: `${MARKETPLACE_PACKAGE_ID}::skill::delist`,
@@ -30,7 +30,7 @@ export function useDelistSkill() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["listings-registry"] });
       queryClient.invalidateQueries({ queryKey: ["my-listings"] });
-      queryClient.invalidateQueries({ queryKey: ["skill-listings"] });
+      queryClient.invalidateQueries({ queryKey: ["playbook-listings"] });
     },
   });
 }

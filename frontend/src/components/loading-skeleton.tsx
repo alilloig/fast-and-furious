@@ -1,9 +1,9 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { SkillGrid } from "./skills/skill-grid";
+import { PlaybookGrid } from "./skills/playbook-grid";
 
 export function LoadingSkeleton({ count = 8 }: { count?: number }) {
   return (
-    <SkillGrid>
+    <PlaybookGrid>
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="space-y-3 rounded-lg border p-4">
           <div className="flex items-start justify-between">
@@ -21,6 +21,6 @@ export function LoadingSkeleton({ count = 8 }: { count?: number }) {
           </div>
         </div>
       ))}
-    </SkillGrid>
+    </PlaybookGrid>
   );
 }

@@ -1,5 +1,5 @@
 import type { ClientWithCoreApi } from "@mysten/sui/client";
-import type { SkillListing, PurchaseReceipt, IntegrityVerification } from "./types";
+import type { PlaybookListing, PurchaseReceipt, IntegrityVerification } from "./types";
 
 const INITIAL_STATE: IntegrityVerification = {
   status: 'idle',
@@ -18,7 +18,7 @@ const INITIAL_STATE: IntegrityVerification = {
 
 export async function verifyBlobIntegrity(
   encryptedBytes: Uint8Array,
-  skill: SkillListing,
+  skill: PlaybookListing,
   receipt: PurchaseReceipt,
   suiClient: ClientWithCoreApi,
 ): Promise<IntegrityVerification> {

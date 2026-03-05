@@ -1,11 +1,9 @@
 import { fromBase64 } from "@mysten/sui/utils";
 import type {
-  SkillListing,
-  PackageListing,
+  PlaybookListing,
   MarketplaceConfig,
   PurchaseReceipt,
   SellerCap,
-  PackageSellerCap,
   SellerVaultInfo,
 } from "./types";
 
@@ -26,13 +24,14 @@ function parseVectorU8AsHex(value: unknown): string {
 }
 
 /**
- * Parse a gRPC JSON object into a SkillListing.
+ * Parse a gRPC JSON object into a PlaybookListing.
  * The `json` field from Sui gRPC uses Move field names (snake_case).
+ * On-chain type is still `SkillListing` — this parser bridges the naming gap.
  */
-export function parseSkillListing(
+export function parsePlaybookListing(
   objectId: string,
   json: Record<string, unknown>,
-): SkillListing {
+): PlaybookListing {
   return {
     id: objectId,
     seller: json.seller as string,
@@ -52,26 +51,6 @@ export function parseSkillListing(
     isFinalized: json.is_finalized as boolean,
     rootHash: parseVectorU8AsHex(json.root_hash),
     encodingNonce: Number((json.encoding_nonce as string) ?? "0"),
-  };
-}
-
-/**
- * Parse a gRPC JSON object into a PackageListing.
- */
-export function parsePackageListing(
-  objectId: string,
-  json: Record<string, unknown>,
-): PackageListing {
-  return {
-    id: objectId,
-    seller: json.seller as string,
-    title: json.title as string,
-    description: json.description as string,
-    skillIds: json.skill_ids as string[],
-    discountBps: Number(json.discount_bps as string),
-    price: BigInt(json.price as string),
-    createdAtEpoch: Number(json.created_at_epoch as string),
-    isActive: json.is_active as boolean,
   };
 }
 
@@ -100,7 +79,7 @@ export function parsePurchaseReceipt(
   return {
     id: objectId,
     buyer: json.buyer as string,
-    skillIds: json.skill_ids as string[],
+    playbookIds: json.skill_ids as string[],
     seller: json.seller as string,
     amountPaid: BigInt(json.amount_paid as string),
     purchasedAtEpoch: Number(json.purchased_at_epoch as string),
@@ -123,17 +102,7 @@ export function parseSellerCap(
 ): SellerCap {
   return {
     id: objectId,
-    skillListingId: json.skill_listing_id as string,
-  };
-}
-
-export function parsePackageSellerCap(
-  objectId: string,
-  json: Record<string, unknown>,
-): PackageSellerCap {
-  return {
-    id: objectId,
-    packageListingId: json.package_listing_id as string,
+    playbookListingId: json.skill_listing_id as string,
   };
 }
 

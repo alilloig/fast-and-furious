@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { bcs } from "@mysten/sui/bcs";
 import { IS_DEPLOYED, LISTINGS_REGISTRY_ID } from "@/lib/constants";
 import type { RegistryEntry } from "@/lib/types";
-import { MOCK_SKILLS, MOCK_PACKAGES } from "@/lib/mock-data";
+import { MOCK_PLAYBOOKS } from "@/lib/mock-data";
 import { useSuiClient } from "./use-sui-client";
 
 export function useListingsRegistry() {
@@ -38,9 +38,6 @@ export function useListingsRegistry() {
     },
     placeholderData: IS_DEPLOYED
       ? undefined
-      : [
-          ...MOCK_SKILLS.map((s) => ({ listingId: s.id, tags: s.tags })),
-          ...MOCK_PACKAGES.map((p) => ({ listingId: p.id, tags: [] })),
-        ],
+      : MOCK_PLAYBOOKS.map((s) => ({ listingId: s.id, tags: s.tags })),
   });
 }

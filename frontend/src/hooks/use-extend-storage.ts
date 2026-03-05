@@ -71,7 +71,7 @@ export function useExtendStorage() {
       return { newEndEpoch };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["skill-detail"] });
+      queryClient.invalidateQueries({ queryKey: ["playbook-detail"] });
       queryClient.invalidateQueries({ queryKey: ["my-listings"] });
     },
   });

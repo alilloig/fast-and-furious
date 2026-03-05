@@ -5,7 +5,7 @@ import { useDAppKit } from "@mysten/dapp-kit-react";
 import { Transaction } from "@mysten/sui/transactions";
 import { MARKETPLACE_PACKAGE_ID, MARKETPLACE_CONFIG_ID } from "@/lib/constants";
 
-interface CreateSkillArgs {
+interface CreatePlaybookArgs {
   title: string;
   description: string;
   price: bigint;
@@ -18,12 +18,12 @@ interface CreateSkillArgs {
  * The listing is inactive and not yet registered in the ListingsRegistry.
  * After this, the seller must encrypt + upload + call finalize.
  */
-export function useCreateSkill() {
+export function useCreatePlaybook() {
   const dAppKit = useDAppKit();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (args: CreateSkillArgs) => {
+    mutationFn: async (args: CreatePlaybookArgs) => {
       const tx = new Transaction();
       tx.moveCall({
         target: `${MARKETPLACE_PACKAGE_ID}::skill::create`,

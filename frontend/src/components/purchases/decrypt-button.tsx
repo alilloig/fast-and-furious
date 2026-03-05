@@ -11,12 +11,12 @@ import { getSealClient } from "@/lib/seal";
 import { MARKETPLACE_PACKAGE_ID, PACKAGE_VERSION_ID } from "@/lib/constants";
 import { verifyBlobIntegrity } from "@/lib/verify-integrity";
 import { IntegrityPanel } from "./integrity-panel";
-import type { SkillListing, PurchaseReceipt, IntegrityVerification } from "@/lib/types";
+import type { PlaybookListing, PurchaseReceipt, IntegrityVerification } from "@/lib/types";
 
 interface DecryptButtonProps {
   receiptId: string;
   receipt: PurchaseReceipt;
-  skill: SkillListing;
+  skill: PlaybookListing;
   walrusBlobId: string;
   walrusQuiltId: string | null;
   fileNames: string[];
@@ -78,7 +78,7 @@ function SingleFileDecrypt({
 }: {
   receiptId: string;
   receipt: PurchaseReceipt;
-  skill: SkillListing;
+  skill: PlaybookListing;
   walrusBlobId: string;
   fileName: string;
 }) {
@@ -168,7 +168,7 @@ function MultiFileDecrypt({
 }: {
   receiptId: string;
   receipt: PurchaseReceipt;
-  skill: SkillListing;
+  skill: PlaybookListing;
   walrusQuiltId: string;
   fileNames: string[];
 }) {

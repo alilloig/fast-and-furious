@@ -19,14 +19,14 @@ import { WalrusScanLink } from "@/components/walrus-scan-link";
 import { StorageStatusBadge } from "@/components/storage-status-badge";
 import { ExtendStorageDialog } from "@/components/seller/extend-storage-dialog";
 import { ErrorAlert } from "@/components/error-alert";
-import { useDelistSkill } from "@/hooks/use-delist-skill";
+import { useDelistPlaybook } from "@/hooks/use-delist-playbook";
 import { useWalrusEpoch } from "@/hooks/use-current-epoch";
 import type { MyListing } from "@/hooks/use-my-listings";
 
 export function MyListingCard({ myListing }: { myListing: MyListing }) {
   const { cap, listing } = myListing;
   const [open, setOpen] = useState(false);
-  const delistMutation = useDelistSkill();
+  const delistMutation = useDelistPlaybook();
   const { data: epochInfo } = useWalrusEpoch();
 
   return (
@@ -34,7 +34,7 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="line-clamp-1 text-base">
-            <Link href={`/skill/${listing.id}`} className="hover:underline after:absolute after:inset-0">
+            <Link href={`/playbook/${listing.id}`} className="hover:underline after:absolute after:inset-0">
               {listing.title}
             </Link>
           </CardTitle>

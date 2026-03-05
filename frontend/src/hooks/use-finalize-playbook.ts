@@ -8,7 +8,7 @@ import {
   LISTINGS_REGISTRY_ID,
 } from "@/lib/constants";
 
-interface FinalizeSkillArgs {
+interface FinalizePlaybookArgs {
   sellerCapId: string;
   listingId: string;
   walrusBlobId: string;
@@ -26,12 +26,12 @@ interface FinalizeSkillArgs {
  * Walrus blob ID, Seal key identity, activating the listing, and registering
  * it in the ListingsRegistry so buyers can discover it.
  */
-export function useFinalizeSkill() {
+export function useFinalizePlaybook() {
   const dAppKit = useDAppKit();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (args: FinalizeSkillArgs) => {
+    mutationFn: async (args: FinalizePlaybookArgs) => {
       const tx = new Transaction();
       tx.moveCall({
         target: `${MARKETPLACE_PACKAGE_ID}::skill::finalize`,

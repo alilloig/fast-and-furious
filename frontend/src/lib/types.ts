@@ -1,4 +1,4 @@
-export interface SkillListing {
+export interface PlaybookListing {
   id: string;
   seller: string;
   title: string;
@@ -19,18 +19,6 @@ export interface SkillListing {
   isFinalized: boolean;
 }
 
-export interface PackageListing {
-  id: string;
-  seller: string;
-  title: string;
-  description: string;
-  skillIds: string[];
-  discountBps: number;
-  price: bigint;
-  createdAtEpoch: number;
-  isActive: boolean;
-}
-
 export interface MarketplaceConfig {
   id: string;
   version: number;
@@ -46,7 +34,7 @@ export interface RegistryEntry {
 export interface PurchaseReceipt {
   id: string;
   buyer: string;
-  skillIds: string[];
+  playbookIds: string[];
   seller: string;
   amountPaid: bigint;
   purchasedAtEpoch: number;
@@ -55,12 +43,7 @@ export interface PurchaseReceipt {
 
 export interface SellerCap {
   id: string;
-  skillListingId: string;
-}
-
-export interface PackageSellerCap {
-  id: string;
-  packageListingId: string;
+  playbookListingId: string;
 }
 
 export interface SellerVaultInfo {

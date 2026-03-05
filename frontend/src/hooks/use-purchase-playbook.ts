@@ -5,18 +5,18 @@ import { useDAppKit } from "@mysten/dapp-kit-react";
 import { Transaction, coinWithBalance } from "@mysten/sui/transactions";
 import { MARKETPLACE_PACKAGE_ID, MARKETPLACE_CONFIG_ID } from "@/lib/constants";
 
-interface PurchaseSkillArgs {
+interface PurchasePlaybookArgs {
   listingId: string;
   vaultId: string;
   price: bigint;
 }
 
-export function usePurchaseSkill() {
+export function usePurchasePlaybook() {
   const dAppKit = useDAppKit();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ listingId, vaultId, price }: PurchaseSkillArgs) => {
+    mutationFn: async ({ listingId, vaultId, price }: PurchasePlaybookArgs) => {
       const tx = new Transaction();
       const payment = coinWithBalance({ balance: price });
       tx.moveCall({

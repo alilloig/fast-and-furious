@@ -3,11 +3,11 @@
 import { useMutation } from "@tanstack/react-query";
 import { useCurrentClient } from "@mysten/dapp-kit-react";
 import { verifyBlobIntegrity } from "@/lib/verify-integrity";
-import type { SkillListing, PurchaseReceipt } from "@/lib/types";
+import type { PlaybookListing, PurchaseReceipt } from "@/lib/types";
 
 interface VerifyIntegrityArgs {
   encryptedBytes: Uint8Array;
-  skill: SkillListing;
+  skill: PlaybookListing;
   receipt: PurchaseReceipt;
 }
 

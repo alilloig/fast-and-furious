@@ -18,9 +18,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorAlert } from "@/components/error-alert";
 import { StorageCostEstimate } from "@/components/seller/storage-cost-estimate";
+import { FileDropZone } from "@/components/seller/file-drop-zone";
 import { useCurrentAccount } from "@mysten/dapp-kit-react";
-import { useCreateSkill } from "@/hooks/use-create-skill";
-import { useFinalizeSkill } from "@/hooks/use-finalize-skill";
+import { useCreatePlaybook } from "@/hooks/use-create-playbook";
+import { useFinalizePlaybook } from "@/hooks/use-finalize-playbook";
 import { getSealClient } from "@/lib/seal";
 import { MOCK_CATEGORIES } from "@/lib/mock-data";
 import {
@@ -106,21 +107,15 @@ function validateFiles(files: File[]): string | null {
       ? `.${f.name.split(".").pop()!.toLowerCase()}`
       : "";
     if (!ALLOWED_FILE_EXTENSIONS.includes(ext))
-      return `File type "${ext || "(no extension)"}" is not allowed.`;
+      return `File type "${ext || "(no extension)"}" is not allowed. Only .md, .yml, .yaml, and .toml files are accepted.`;
   }
   return null;
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-export function CreateSkillForm() {
+export function CreatePlaybookForm() {
   const router = useRouter();
-  const createSkillMutation = useCreateSkill();
-  const finalizeMutation = useFinalizeSkill();
+  const createPlaybookMutation = useCreatePlaybook();
+  const finalizeMutation = useFinalizePlaybook();
   const suiClient = useCurrentClient();
   const currentAccount = useCurrentAccount();
 
@@ -164,7 +159,7 @@ export function CreateSkillForm() {
       // Step 1: Create listing on-chain (metadata only — gets us the listing ID)
       setStep("creating");
       setStepDetail("Creating listing on-chain...");
-      const createResult = await createSkillMutation.mutateAsync({
+      const createResult = await createPlaybookMutation.mutateAsync({
         title,
         description,
         price,
@@ -306,7 +301,7 @@ export function CreateSkillForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>New Skill Listing</CardTitle>
+        <CardTitle>New Playbook Listing</CardTitle>
       </CardHeader>
       <CardContent>
         {isPending && (
@@ -334,7 +329,7 @@ export function CreateSkillForm() {
               required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe what this skill does..."
+              placeholder="Describe what this playbook does..."
               rows={4}
               disabled={isPending}
             />
@@ -390,34 +385,15 @@ export function CreateSkillForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="file">Skill Files</Label>
-            <Input
-              id="file"
-              type="file"
-              required
-              multiple
-              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+            <Label>Playbook Files</Label>
+            <FileDropZone
+              files={files}
+              onFilesChange={setFiles}
+              maxFiles={MAX_FILES_PER_LISTING}
+              maxTotalSize={MAX_TOTAL_FILE_SIZE_BYTES}
+              acceptExtensions={ALLOWED_FILE_EXTENSIONS}
               disabled={isPending}
             />
-            {files.length > 0 && (
-              <div className="space-y-1 rounded-md border p-2">
-                {files.map((f, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between text-xs"
-                  >
-                    <span className="truncate font-mono">{f.name}</span>
-                    <span className="ml-2 shrink-0 text-muted-foreground">
-                      {formatFileSize(f.size)}
-                    </span>
-                  </div>
-                ))}
-                <div className="border-t pt-1 text-xs text-muted-foreground">
-                  {files.length} file{files.length !== 1 ? "s" : ""},{" "}
-                  {formatFileSize(files.reduce((s, f) => s + f.size, 0))} total
-                </div>
-              </div>
-            )}
             {files.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="epochs">Storage Duration</Label>
@@ -441,9 +417,10 @@ export function CreateSkillForm() {
             )}
             <StorageCostEstimate estimate={storageEstimate} />
             <p className="text-xs text-muted-foreground">
-              Upload up to {MAX_FILES_PER_LISTING} files (50MB total). Files
-              are encrypted with Seal before upload. Only buyers with a valid
-              purchase receipt can decrypt them.
+              Upload <code>.md</code>, <code>.yml</code>, <code>.yaml</code>, or{" "}
+              <code>.toml</code> files (up to {MAX_FILES_PER_LISTING} files, 50MB total).
+              Files are encrypted with Seal before upload. Only buyers with a
+              valid purchase receipt can decrypt them.
             </p>
           </div>
 

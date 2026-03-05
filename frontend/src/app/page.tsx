@@ -3,17 +3,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { SkillCard } from "@/components/skills/skill-card";
-import { SkillGrid } from "@/components/skills/skill-grid";
+import { PlaybookCard } from "@/components/skills/playbook-card";
+import { PlaybookGrid } from "@/components/skills/playbook-grid";
 import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { useListingsRegistry } from "@/hooks/use-listings-registry";
-import { useSkillListings } from "@/hooks/use-skill-listings";
+import { usePlaybookListings } from "@/hooks/use-playbook-listings";
 
 export default function HomePage() {
   const { data: entries } = useListingsRegistry();
   const listingIds = entries?.map((e) => e.listingId) ?? [];
-  const { data: skills, isLoading } = useSkillListings(listingIds);
-  const featured = skills?.slice(0, 6) ?? [];
+  const { data: playbooks, isLoading } = usePlaybookListings(listingIds);
+  const featured = playbooks?.slice(0, 6) ?? [];
 
   return (
     <div>
@@ -34,25 +34,25 @@ export default function HomePage() {
             Wooper - The AI Playbooks Marketplace
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Buy and sell AI playbooks for your coding assistants. Upload skills, agent orchestrators, 
-            and claude.md configs — stored on Walrus and secured with Sui + Seal.
+            Buy and sell AI playbooks for your coding assistants. Upload claude.md configs,
+            agent prompts, and YAML workflows — encrypted on Walrus, secured by Sui + Seal.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Button asChild size="lg">
-              <Link href="/explore">Browse Skills</Link>
+              <Link href="/explore">Browse Playbooks</Link>
             </Button>
             <Button asChild variant="outline" size="lg">
-              <Link href="/seller/dashboard">Sell Skills</Link>
+              <Link href="/seller/dashboard">Sell Playbooks</Link>
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Featured Skills */}
+      {/* Featured Playbooks */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Featured Skills</h2>
+            <h2 className="text-2xl font-bold">Featured Playbooks</h2>
             <Button asChild variant="ghost">
               <Link href="/explore">View all</Link>
             </Button>
@@ -60,14 +60,14 @@ export default function HomePage() {
           {isLoading ? (
             <LoadingSkeleton count={6} />
           ) : featured.length > 0 ? (
-            <SkillGrid>
-              {featured.map((skill) => (
-                <SkillCard key={skill.id} skill={skill} />
+            <PlaybookGrid>
+              {featured.map((playbook) => (
+                <PlaybookCard key={playbook.id} playbook={playbook} />
               ))}
-            </SkillGrid>
+            </PlaybookGrid>
           ) : (
             <p className="text-center text-muted-foreground">
-              No skills listed yet. Be the first to publish!
+              No playbooks listed yet. Be the first to publish!
             </p>
           )}
         </div>
@@ -83,7 +83,7 @@ export default function HomePage() {
                 step: "1",
                 title: "Browse",
                 description:
-                  "Discover AI skills listed by creators. Filter by category, tags, or search by keyword.",
+                  "Discover AI playbooks listed by creators. Filter by category, tags, or search by keyword.",
               },
               {
                 step: "2",
@@ -117,9 +117,9 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="grid gap-8 md:grid-cols-3">
             <div className="text-center">
-              <div className="text-3xl font-bold">{skills?.length ?? 0}</div>
+              <div className="text-3xl font-bold">{playbooks?.length ?? 0}</div>
               <div className="mt-1 text-sm text-muted-foreground">
-                Skills Listed
+                Playbooks Listed
               </div>
             </div>
             <div className="text-center">

@@ -2,19 +2,19 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { IS_DEPLOYED } from "@/lib/constants";
-import { parseSkillListing } from "@/lib/parsers";
-import type { SkillListing } from "@/lib/types";
-import { MOCK_SKILLS } from "@/lib/mock-data";
+import { parsePlaybookListing } from "@/lib/parsers";
+import type { PlaybookListing } from "@/lib/types";
+import { MOCK_PLAYBOOKS } from "@/lib/mock-data";
 import { useSuiClient } from "./use-sui-client";
 
-export function useSkillListings(listingIds: string[]) {
+export function usePlaybookListings(listingIds: string[]) {
   const client = useSuiClient();
 
-  return useQuery<SkillListing[]>({
-    queryKey: ["skill-listings", listingIds],
+  return useQuery<PlaybookListing[]>({
+    queryKey: ["playbook-listings", listingIds],
     enabled: IS_DEPLOYED && listingIds.length > 0,
     queryFn: async () => {
-      const skills: SkillListing[] = [];
+      const playbooks: PlaybookListing[] = [];
 
       for (let i = 0; i < listingIds.length; i += 50) {
         const batch = listingIds.slice(i, i + 50);
@@ -27,13 +27,13 @@ export function useSkillListings(listingIds: string[]) {
           if (obj instanceof Error) continue;
           if (!obj.type.includes("::skill::SkillListing")) continue;
           if (!obj.json) continue;
-          const skill = parseSkillListing(obj.objectId, obj.json);
-          if (skill.isActive) skills.push(skill);
+          const playbook = parsePlaybookListing(obj.objectId, obj.json);
+          if (playbook.isActive) playbooks.push(playbook);
         }
       }
 
-      return skills;
+      return playbooks;
     },
-    placeholderData: IS_DEPLOYED ? undefined : MOCK_SKILLS.filter((s) => s.isActive),
+    placeholderData: IS_DEPLOYED ? undefined : MOCK_PLAYBOOKS.filter((s) => s.isActive),
   });
 }

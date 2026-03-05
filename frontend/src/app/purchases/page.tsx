@@ -7,17 +7,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/empty-state";
 import { ReceiptCard } from "@/components/purchases/receipt-card";
 import { usePurchaseReceipts } from "@/hooks/use-purchase-receipts";
-import { useSkillListings } from "@/hooks/use-skill-listings";
+import { usePlaybookListings } from "@/hooks/use-playbook-listings";
 
 export default function PurchasesPage() {
   const account = useCurrentAccount();
   const { data: receipts, isLoading: receiptsLoading } = usePurchaseReceipts();
 
-  // Collect all unique skill IDs across all receipts to fetch in one batch
-  const allSkillIds = Array.from(
-    new Set(receipts?.flatMap((r) => r.skillIds) ?? []),
+  const allPlaybookIds = Array.from(
+    new Set(receipts?.flatMap((r) => r.playbookIds) ?? []),
   );
-  const { data: skills } = useSkillListings(allSkillIds);
+  const { data: playbooks } = usePlaybookListings(allPlaybookIds);
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
@@ -41,7 +40,7 @@ export default function PurchasesPage() {
       ) : !receipts || receipts.length === 0 ? (
         <EmptyState
           title="No purchases yet"
-          description="Browse the marketplace to find AI skills and agents to purchase."
+          description="Browse the marketplace to find AI playbooks to purchase."
         />
       ) : (
         <div className="space-y-4">
@@ -49,7 +48,7 @@ export default function PurchasesPage() {
             <ReceiptCard
               key={receipt.id}
               receipt={receipt}
-              skills={skills ?? []}
+              skills={playbooks ?? []}
             />
           ))}
         </div>

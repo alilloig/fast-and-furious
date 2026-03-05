@@ -2,16 +2,16 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { IS_DEPLOYED } from "@/lib/constants";
-import { parsePackageListing } from "@/lib/parsers";
-import type { PackageListing } from "@/lib/types";
-import { MOCK_PACKAGES } from "@/lib/mock-data";
+import { parsePlaybookListing } from "@/lib/parsers";
+import type { PlaybookListing } from "@/lib/types";
+import { MOCK_PLAYBOOKS } from "@/lib/mock-data";
 import { useSuiClient } from "./use-sui-client";
 
-export function usePackageDetail(id: string) {
+export function usePlaybookDetail(id: string) {
   const client = useSuiClient();
 
-  return useQuery<PackageListing | null>({
-    queryKey: ["package-detail", id],
+  return useQuery<PlaybookListing | null>({
+    queryKey: ["playbook-detail", id],
     enabled: IS_DEPLOYED && !!id,
     queryFn: async () => {
       const result = await client.getObject({
@@ -19,10 +19,10 @@ export function usePackageDetail(id: string) {
         include: { json: true },
       });
       if (!result.object.json) return null;
-      return parsePackageListing(result.object.objectId, result.object.json);
+      return parsePlaybookListing(result.object.objectId, result.object.json);
     },
     placeholderData: IS_DEPLOYED
       ? undefined
-      : MOCK_PACKAGES.find((p) => p.id === id) ?? null,
+      : MOCK_PLAYBOOKS.find((s) => s.id === id) ?? null,
   });
 }

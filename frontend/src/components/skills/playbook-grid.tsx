@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export function SkillGrid({
+export function PlaybookGrid({
   children,
   className,
 }: {

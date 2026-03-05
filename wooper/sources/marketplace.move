@@ -92,7 +92,7 @@ public fun update_fee_recipient(
 
 // === Registry Functions ===
 
-/// Register a listing in the registry. Called by skill::create and package_listing::create.
+/// Register a listing in the registry. Called by skill::create.
 public(package) fun register_listing(
     registry: &mut ListingsRegistry,
     listing_id: ID,
@@ -103,7 +103,7 @@ public(package) fun register_listing(
     registry.listing_count = registry.listing_count + 1;
 }
 
-/// Unregister a listing from the registry. Called by skill::delist and package_listing::delist.
+/// Unregister a listing from the registry. Called by skill::delist.
 public(package) fun unregister_listing(
     registry: &mut ListingsRegistry,
     listing_id: ID,
