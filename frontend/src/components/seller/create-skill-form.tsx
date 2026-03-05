@@ -18,6 +18,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorAlert } from "@/components/error-alert";
 import { StorageCostEstimate } from "@/components/seller/storage-cost-estimate";
+import { FileDropZone } from "@/components/seller/file-drop-zone";
 import { useCurrentAccount } from "@mysten/dapp-kit-react";
 import { useCreateSkill } from "@/hooks/use-create-skill";
 import { useFinalizeSkill } from "@/hooks/use-finalize-skill";
@@ -109,12 +110,6 @@ function validateFiles(files: File[]): string | null {
       return `File type "${ext || "(no extension)"}" is not allowed.`;
   }
   return null;
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function CreateSkillForm() {
@@ -390,34 +385,15 @@ export function CreateSkillForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="file">Skill Files</Label>
-            <Input
-              id="file"
-              type="file"
-              required
-              multiple
-              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+            <Label>Skill Files</Label>
+            <FileDropZone
+              files={files}
+              onFilesChange={setFiles}
+              maxFiles={MAX_FILES_PER_LISTING}
+              maxTotalSize={MAX_TOTAL_FILE_SIZE_BYTES}
+              acceptExtensions={ALLOWED_FILE_EXTENSIONS}
               disabled={isPending}
             />
-            {files.length > 0 && (
-              <div className="space-y-1 rounded-md border p-2">
-                {files.map((f, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between text-xs"
-                  >
-                    <span className="truncate font-mono">{f.name}</span>
-                    <span className="ml-2 shrink-0 text-muted-foreground">
-                      {formatFileSize(f.size)}
-                    </span>
-                  </div>
-                ))}
-                <div className="border-t pt-1 text-xs text-muted-foreground">
-                  {files.length} file{files.length !== 1 ? "s" : ""},{" "}
-                  {formatFileSize(files.reduce((s, f) => s + f.size, 0))} total
-                </div>
-              </div>
-            )}
             {files.length > 0 && (
               <div className="space-y-2">
                 <Label htmlFor="epochs">Storage Duration</Label>
