@@ -1,3 +1,4 @@
+import { fromBase64 } from "@mysten/sui/utils";
 import type {
   SkillListing,
   PackageListing,
@@ -7,6 +8,22 @@ import type {
   PackageSellerCap,
   SellerVaultInfo,
 } from "./types";
+
+/**
+ * Decode a base64-encoded vector<u8> from gRPC JSON into a hex string.
+ * Sui gRPC JSON serializes vector<u8> as base64, not hex or array.
+ */
+function parseVectorU8AsHex(value: unknown): string {
+  if (!value || typeof value !== "string" || value.length === 0) return "";
+  try {
+    const bytes = fromBase64(value);
+    return Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  } catch {
+    return "";
+  }
+}
 
 /**
  * Parse a gRPC JSON object into a SkillListing.
@@ -31,6 +48,8 @@ export function parseSkillListing(
     createdAtEpoch: Number(json.created_at_epoch as string),
     isActive: json.is_active as boolean,
     isFinalized: json.is_finalized as boolean,
+    rootHash: parseVectorU8AsHex(json.root_hash),
+    encodingNonce: Number((json.encoding_nonce as string) ?? "0"),
   };
 }
 
@@ -83,6 +102,7 @@ export function parsePurchaseReceipt(
     seller: json.seller as string,
     amountPaid: BigInt(json.amount_paid as string),
     purchasedAtEpoch: Number(json.purchased_at_epoch as string),
+    walrusBlobId: (json.walrus_blob_id as string) ?? "",
   };
 }
 

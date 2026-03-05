@@ -39,6 +39,8 @@ fun setup_and_create_listing(scenario: &mut ts::Scenario) {
         option::none(),
         vector[b"skill_file.txt".to_string()],
         vector[0u8, 1, 2, 3, 4],
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
 
     scenario.return_to_sender(seller_cap);
@@ -214,6 +216,8 @@ fun finalize_activates_and_registers() {
         option::none(),
         vector[b"prompt.md".to_string()],
         vector[0u8, 1, 2, 3, 4],
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
 
     assert_eq!(listing.is_active(), true);
@@ -245,6 +249,8 @@ fun finalize_already_finalized_fails() {
         option::none(),
         vector[b"file.txt".to_string()],
         vector[0u8],
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
     abort 0
 }
@@ -286,6 +292,8 @@ fun finalize_wrong_seller_cap_fails() {
         option::none(),
         vector[b"file.txt".to_string()],
         vector[0u8],
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
     abort 0
 }
@@ -325,6 +333,8 @@ fun finalize_with_empty_file_names_fails() {
         option::none(),
         vector[],
         vector[0u8],
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
     abort 0
 }
@@ -367,6 +377,8 @@ fun finalize_with_too_many_files_fails() {
             b"f10.txt".to_string(), b"f11.txt".to_string(),
         ],
         vector[0u8],
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
     abort 0
 }
@@ -407,6 +419,8 @@ fun finalize_with_multiple_files_succeeds() {
             b"rules.json".to_string(),
         ],
         vector[0u8, 1, 2, 3, 4],
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
 
     assert_eq!(listing.is_active(), true);
@@ -417,5 +431,21 @@ fun finalize_with_multiple_files_succeeds() {
     scenario.return_to_sender(seller_cap);
     ts::return_shared(listing);
     ts::return_shared(registry);
+    scenario.end();
+}
+
+#[test]
+fun finalize_stores_root_hash_and_nonce() {
+    let mut scenario = test_utils::begin();
+    setup_and_create_listing(&mut scenario);
+    scenario.next_tx(test_utils::user1());
+
+    let listing = scenario.take_shared<SkillListing>();
+
+    assert_eq!(listing.root_hash(), vector[0xAA, 0xBB, 0xCC]);
+    assert_eq!(listing.encoding_nonce(), 42);
+    assert_eq!(listing.walrus_blob_id(), b"blob_abc123".to_string());
+
+    ts::return_shared(listing);
     scenario.end();
 }

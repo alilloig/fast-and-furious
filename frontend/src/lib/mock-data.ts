@@ -24,6 +24,8 @@ export const MOCK_SKILLS: SkillListing[] = [
     createdAtEpoch: 100,
     isActive: true,
     isFinalized: true,
+    rootHash: "aabbcc",
+    encodingNonce: 42,
   },
   {
     id: "0xmock_skill_2",
@@ -41,6 +43,8 @@ export const MOCK_SKILLS: SkillListing[] = [
     createdAtEpoch: 101,
     isActive: true,
     isFinalized: true,
+    rootHash: "aabbcc",
+    encodingNonce: 42,
   },
   {
     id: "0xmock_skill_3",
@@ -58,6 +62,8 @@ export const MOCK_SKILLS: SkillListing[] = [
     createdAtEpoch: 102,
     isActive: true,
     isFinalized: true,
+    rootHash: "aabbcc",
+    encodingNonce: 42,
   },
   {
     id: "0xmock_skill_4",
@@ -75,6 +81,8 @@ export const MOCK_SKILLS: SkillListing[] = [
     createdAtEpoch: 103,
     isActive: true,
     isFinalized: true,
+    rootHash: "aabbcc",
+    encodingNonce: 42,
   },
 ];
 
@@ -101,6 +109,7 @@ export const MOCK_RECEIPTS: PurchaseReceipt[] = [
     seller: "0xaa00bb11cc22dd33ee44ff5566778899aabbccdd",
     amountPaid: 5_000_000_000n,
     purchasedAtEpoch: 105,
+    walrusBlobId: "mock_blob_1",
   },
   {
     id: "0xmock_receipt_2",
@@ -109,6 +118,7 @@ export const MOCK_RECEIPTS: PurchaseReceipt[] = [
     seller: "0xaa00bb11cc22dd33ee44ff5566778899aabbccdd",
     amountPaid: 12_000_000_000n,
     purchasedAtEpoch: 106,
+    walrusBlobId: "mock_blob_1",
   },
 ];
 

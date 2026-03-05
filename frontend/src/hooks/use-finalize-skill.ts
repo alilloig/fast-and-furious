@@ -15,6 +15,8 @@ interface FinalizeSkillArgs {
   walrusQuiltId: string | null;
   fileNames: string[];
   sealKeyId: number[];
+  rootHash: number[];
+  encodingNonce: number;
 }
 
 /**
@@ -39,6 +41,8 @@ export function useFinalizeSkill() {
           tx.pure.option("string", args.walrusQuiltId),
           tx.pure.vector("string", args.fileNames),
           tx.pure.vector("u8", args.sealKeyId),
+          tx.pure.vector("u8", args.rootHash),
+          tx.pure.u64(args.encodingNonce),
         ],
       });
       return dAppKit.signAndExecuteTransaction({ transaction: tx });
