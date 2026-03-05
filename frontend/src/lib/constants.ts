@@ -40,6 +40,17 @@ export const SELLER_VAULT_TYPE = `${MARKETPLACE_PACKAGE_ID}::purchase::SellerVau
 export const SELLER_CAP_TYPE = `${MARKETPLACE_PACKAGE_ID}::skill::SellerCap`;
 export const PACKAGE_SELLER_CAP_TYPE = `${MARKETPLACE_PACKAGE_ID}::package_listing::PackageSellerCap`;
 
+// --- Walrus Storage Estimation ---
+export const WALRUS_ENCODING_FACTOR = 5;
+export const WALRUS_METADATA_OVERHEAD_BYTES = 64 * 1024 * 1024; // ~64 MiB
+export const SEAL_ENCRYPTION_OVERHEAD_PER_FILE = 200; // bytes
+export const WALRUS_FROST_PER_MIB_PER_EPOCH = 100_000n; // 0.0001 WAL
+export const WALRUS_WRITE_FEE_FROST = 20_000n;
+export const FROST_PER_WAL = 1_000_000_000n;
+export const WALRUS_DEFAULT_EPOCHS = 5;
+export const WALRUS_MIN_EPOCHS = 1;
+export const WALRUS_MAX_EPOCHS = 53; // from `walrus info`: max 53 epochs ahead
+
 export const MAX_FILES_PER_LISTING = 10;
 export const MAX_TOTAL_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB
 export const ALLOWED_FILE_EXTENSIONS = [

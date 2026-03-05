@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { MIST_PER_SUI } from "./constants";
+import { MIST_PER_SUI, FROST_PER_WAL } from "./constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,6 +14,15 @@ export function formatSui(mist: bigint): string {
   // Show up to 4 decimal places
   const decimal = remainder.toString().padStart(9, "0").slice(0, 4).replace(/0+$/, "");
   return `${whole}.${decimal} SUI`;
+}
+
+/** Convert FROST amount to a human-readable WAL string (e.g., "0.0001 WAL"). */
+export function formatWal(frost: bigint): string {
+  const whole = frost / FROST_PER_WAL;
+  const remainder = frost % FROST_PER_WAL;
+  if (remainder === 0n) return `${whole} WAL`;
+  const decimal = remainder.toString().padStart(9, "0").slice(0, 6).replace(/0+$/, "");
+  return `${whole}.${decimal} WAL`;
 }
 
 /** Truncate a Sui address for display: 0x1234...abcd */

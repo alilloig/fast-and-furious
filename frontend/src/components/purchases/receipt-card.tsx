@@ -35,18 +35,20 @@ export function ReceiptCard({ receipt, skills }: ReceiptCardProps) {
             return (
               <div
                 key={skillId}
-                className="flex items-center justify-between rounded-lg border p-3"
+                className="relative flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-accent/50"
               >
                 <div className="min-w-0 flex-1">
                   {skill ? (
                     <div className="space-y-1">
                       <Link
                         href={`/skill/${skillId}`}
-                        className="font-medium hover:underline"
+                        className="font-medium hover:underline after:absolute after:inset-0"
                       >
                         {skill.title}
                       </Link>
-                      <WalrusScanLink blobId={skill.walrusBlobId} />
+                      <div className="relative z-10">
+                        <WalrusScanLink blobId={skill.walrusBlobId} />
+                      </div>
                     </div>
                   ) : (
                     <span className="font-mono text-sm text-muted-foreground">
@@ -55,13 +57,15 @@ export function ReceiptCard({ receipt, skills }: ReceiptCardProps) {
                   )}
                 </div>
                 {skill && (
-                  <DecryptButton
-                    receiptId={receipt.id}
-                    walrusBlobId={skill.walrusBlobId}
-                    walrusQuiltId={skill.walrusQuiltId}
-                    fileNames={skill.fileNames}
-                    skillTitle={skill.title}
-                  />
+                  <div className="relative z-10">
+                    <DecryptButton
+                      receiptId={receipt.id}
+                      walrusBlobId={skill.walrusBlobId}
+                      walrusQuiltId={skill.walrusQuiltId}
+                      fileNames={skill.fileNames}
+                      skillTitle={skill.title}
+                    />
+                  </div>
                 )}
               </div>
             );
