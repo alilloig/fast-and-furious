@@ -18,6 +18,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorAlert } from "@/components/error-alert";
 import { StorageCostEstimate } from "@/components/seller/storage-cost-estimate";
+import { useCurrentAccount } from "@mysten/dapp-kit-react";
 import { useCreateSkill } from "@/hooks/use-create-skill";
 import { useFinalizeSkill } from "@/hooks/use-finalize-skill";
 import { getSealClient } from "@/lib/seal";
@@ -121,6 +122,7 @@ export function CreateSkillForm() {
   const createSkillMutation = useCreateSkill();
   const finalizeMutation = useFinalizeSkill();
   const suiClient = useCurrentClient();
+  const currentAccount = useCurrentAccount();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -203,6 +205,8 @@ export function CreateSkillForm() {
       setStep("uploading");
       let walrusBlobId: string;
       let walrusQuiltId: string | null = null;
+      let walrusBlobObjectId = "";
+      let storageEndEpoch = 0;
       let rootHash: number[] = [];
       let encodingNonce = 0;
 
@@ -242,12 +246,14 @@ export function CreateSkillForm() {
       }
 
       // Upload assembled bytes to Walrus via existing blob route
+      const sellerAddress = currentAccount?.address ?? "";
+      const sendToParam = sellerAddress ? `&send_object_to=${sellerAddress}` : "";
       setStepDetail(
         encryptedFiles.length === 1
           ? "Uploading file to Walrus..."
           : `Uploading ${encryptedFiles.length} files to Walrus...`,
       );
-      const uploadResponse = await fetch(`/api/walrus/upload?epochs=${epochs}`, {
+      const uploadResponse = await fetch(`/api/walrus/upload?epochs=${epochs}${sendToParam}`, {
         method: "POST",
         body: uploadBytes as BodyInit,
         headers: { "Content-Type": "application/octet-stream" },
@@ -256,9 +262,12 @@ export function CreateSkillForm() {
         throw new Error(`Walrus upload failed: ${uploadResponse.statusText}`);
       }
       const uploadResult = await uploadResponse.json();
+      const blobObject = uploadResult.newlyCreated?.blobObject;
       walrusBlobId =
-        uploadResult.newlyCreated?.blobObject?.blobId ??
+        blobObject?.blobId ??
         uploadResult.alreadyCertified?.blobId;
+      walrusBlobObjectId = blobObject?.id ?? "";
+      storageEndEpoch = blobObject?.storage?.endEpoch ?? 0;
       if (!walrusBlobId) {
         throw new Error("No blob ID returned from Walrus");
       }
@@ -278,6 +287,8 @@ export function CreateSkillForm() {
         walrusQuiltId,
         fileNames: files.map((f) => f.name),
         sealKeyId,
+        walrusBlobObjectId,
+        storageEndEpoch,
         rootHash,
         encodingNonce,
       });

@@ -39,6 +39,8 @@ fun setup_and_create_listing(scenario: &mut ts::Scenario) {
         option::none(),
         vector[b"skill_file.txt".to_string()],
         vector[0u8, 1, 2, 3, 4],
+        b"0xblobobj_abc123".to_string(),
+        50,
         vector[0xAA, 0xBB, 0xCC],
         42,
     );
@@ -216,12 +218,15 @@ fun finalize_activates_and_registers() {
         option::none(),
         vector[b"prompt.md".to_string()],
         vector[0u8, 1, 2, 3, 4],
+        b"0xblobobj_finalized".to_string(),
+        50,
         vector[0xAA, 0xBB, 0xCC],
         42,
     );
 
     assert_eq!(listing.is_active(), true);
     assert_eq!(listing.is_finalized(), true);
+    assert_eq!(listing.storage_end_epoch(), 50);
     assert_eq!(registry.listing_count(), 1);
 
     scenario.return_to_sender(seller_cap);
@@ -249,6 +254,8 @@ fun finalize_already_finalized_fails() {
         option::none(),
         vector[b"file.txt".to_string()],
         vector[0u8],
+        b"0xblobobj_dup".to_string(),
+        50,
         vector[0xAA, 0xBB, 0xCC],
         42,
     );
@@ -292,6 +299,8 @@ fun finalize_wrong_seller_cap_fails() {
         option::none(),
         vector[b"file.txt".to_string()],
         vector[0u8],
+        b"0xblobobj_bad".to_string(),
+        50,
         vector[0xAA, 0xBB, 0xCC],
         42,
     );
@@ -333,6 +342,8 @@ fun finalize_with_empty_file_names_fails() {
         option::none(),
         vector[],
         vector[0u8],
+        b"0xblobobj_x".to_string(),
+        50,
         vector[0xAA, 0xBB, 0xCC],
         42,
     );
@@ -377,6 +388,8 @@ fun finalize_with_too_many_files_fails() {
             b"f10.txt".to_string(), b"f11.txt".to_string(),
         ],
         vector[0u8],
+        b"0xblobobj_x".to_string(),
+        50,
         vector[0xAA, 0xBB, 0xCC],
         42,
     );
@@ -419,6 +432,8 @@ fun finalize_with_multiple_files_succeeds() {
             b"rules.json".to_string(),
         ],
         vector[0u8, 1, 2, 3, 4],
+        b"0xblobobj_multi".to_string(),
+        50,
         vector[0xAA, 0xBB, 0xCC],
         42,
     );
@@ -432,6 +447,101 @@ fun finalize_with_multiple_files_succeeds() {
     ts::return_shared(listing);
     ts::return_shared(registry);
     scenario.end();
+}
+
+// === update_storage_end_epoch tests ===
+
+#[test]
+fun update_storage_end_epoch_succeeds() {
+    let mut scenario = test_utils::begin();
+    setup_and_create_listing(&mut scenario);
+    scenario.next_tx(test_utils::user1());
+
+    let seller_cap = scenario.take_from_sender<SellerCap>();
+    let mut listing = scenario.take_shared<SkillListing>();
+
+    assert_eq!(listing.storage_end_epoch(), 50);
+
+    skill::update_storage_end_epoch(&seller_cap, &mut listing, 100);
+    assert_eq!(listing.storage_end_epoch(), 100);
+
+    scenario.return_to_sender(seller_cap);
+    ts::return_shared(listing);
+    scenario.end();
+}
+
+#[test, expected_failure(abort_code = 200, location = wooper::skill)]
+fun update_storage_end_epoch_non_seller_fails() {
+    let mut scenario = test_utils::begin();
+    setup_and_create_listing(&mut scenario);
+    scenario.next_tx(test_utils::user2());
+
+    let fake_listing_id = object::id_from_address(@0xDE);
+    let fake_cap = skill::create_seller_cap_for_testing(fake_listing_id, scenario.ctx());
+
+    scenario.next_tx(test_utils::user2());
+
+    let mut listing = scenario.take_shared<SkillListing>();
+
+    // Aborts — wrong seller cap
+    skill::update_storage_end_epoch(&fake_cap, &mut listing, 100);
+    abort 0
+}
+
+#[test, expected_failure(abort_code = 208, location = wooper::skill)]
+fun update_storage_end_epoch_lower_value_fails() {
+    let mut scenario = test_utils::begin();
+    setup_and_create_listing(&mut scenario);
+    scenario.next_tx(test_utils::user1());
+
+    let seller_cap = scenario.take_from_sender<SellerCap>();
+    let mut listing = scenario.take_shared<SkillListing>();
+
+    // Aborts — 30 < current 50
+    skill::update_storage_end_epoch(&seller_cap, &mut listing, 30);
+    abort 0
+}
+
+#[test, expected_failure(abort_code = 208, location = wooper::skill)]
+fun update_storage_end_epoch_same_value_fails() {
+    let mut scenario = test_utils::begin();
+    setup_and_create_listing(&mut scenario);
+    scenario.next_tx(test_utils::user1());
+
+    let seller_cap = scenario.take_from_sender<SellerCap>();
+    let mut listing = scenario.take_shared<SkillListing>();
+
+    // Aborts — 50 == current 50 (must be strictly greater)
+    skill::update_storage_end_epoch(&seller_cap, &mut listing, 50);
+    abort 0
+}
+
+#[test, expected_failure(abort_code = 205, location = wooper::skill)]
+fun update_storage_end_epoch_unfinalized_fails() {
+    let mut scenario = test_utils::begin();
+    marketplace::init_for_testing(scenario.ctx());
+    scenario.next_tx(test_utils::user1());
+
+    let config = scenario.take_shared<MarketplaceConfig>();
+    skill::create(
+        &config,
+        b"Unfinalized".to_string(),
+        b"desc".to_string(),
+        1_000_000_000,
+        b"prompts".to_string(),
+        vector[b"ai".to_string()],
+        scenario.ctx(),
+    );
+    ts::return_shared(config);
+
+    scenario.next_tx(test_utils::user1());
+
+    let seller_cap = scenario.take_from_sender<SellerCap>();
+    let mut listing = scenario.take_shared<SkillListing>();
+
+    // Aborts — listing not finalized
+    skill::update_storage_end_epoch(&seller_cap, &mut listing, 100);
+    abort 0
 }
 
 #[test]

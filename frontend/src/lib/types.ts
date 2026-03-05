@@ -10,11 +10,13 @@ export interface SkillListing {
   walrusQuiltId: string | null;
   fileNames: string[];
   sealKeyId: string;
+  walrusBlobObjectId: string;
+  storageEndEpoch: number;
+  rootHash: string;
+  encodingNonce: number;
   createdAtEpoch: number;
   isActive: boolean;
   isFinalized: boolean;
-  rootHash: string;
-  encodingNonce: number;
 }
 
 export interface PackageListing {
@@ -73,6 +75,12 @@ export interface WalrusStorageEstimate {
   storageFrost: bigint;
   writeFrost: bigint;
   totalFrost: bigint;
+}
+
+export interface WalrusExtensionEstimate {
+  encodedSizeMiB: number;
+  epochs: number;
+  storageFrost: bigint;
 }
 
 export interface IntegrityVerification {

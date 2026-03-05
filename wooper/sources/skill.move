@@ -15,6 +15,7 @@ const EAlreadyFinalized: u64 = 204;
 const ENotFinalized: u64 = 205;
 const EFileNamesRequired: u64 = 206;
 const EMaxFilesExceeded: u64 = 207;
+const EEndEpochNotExtended: u64 = 208;
 
 // === Constants ===
 const MAX_FILES: u64 = 10;
@@ -35,6 +36,8 @@ public struct SkillListing has key {
     walrus_quilt_id: Option<String>,
     file_names: vector<String>,
     seal_key_id: vector<u8>,
+    walrus_blob_object_id: String,
+    storage_end_epoch: u64,
     root_hash: vector<u8>,
     encoding_nonce: u64,
     created_at_epoch: u64,
@@ -62,6 +65,11 @@ public struct SkillListed has copy, drop {
 public struct SkillDelisted has copy, drop {
     listing_id: ID,
     seller: address,
+}
+
+public struct StorageExtended has copy, drop {
+    listing_id: ID,
+    new_end_epoch: u64,
 }
 
 // === Public Functions ===
@@ -95,6 +103,8 @@ public fun create(
         walrus_quilt_id: option::none(),
         file_names: vector[],
         seal_key_id: vector[],
+        walrus_blob_object_id: b"".to_string(),
+        storage_end_epoch: 0,
         root_hash: vector[],
         encoding_nonce: 0,
         created_at_epoch: ctx.epoch(),
@@ -123,6 +133,8 @@ public fun finalize(
     walrus_quilt_id: Option<String>,
     file_names: vector<String>,
     seal_key_id: vector<u8>,
+    walrus_blob_object_id: String,
+    storage_end_epoch: u64,
     root_hash: vector<u8>,
     encoding_nonce: u64,
 ) {
@@ -135,6 +147,8 @@ public fun finalize(
     listing.walrus_quilt_id = walrus_quilt_id;
     listing.file_names = file_names;
     listing.seal_key_id = seal_key_id;
+    listing.walrus_blob_object_id = walrus_blob_object_id;
+    listing.storage_end_epoch = storage_end_epoch;
     listing.root_hash = root_hash;
     listing.encoding_nonce = encoding_nonce;
     listing.is_finalized = true;
@@ -175,6 +189,25 @@ public fun delist(
     });
 }
 
+/// Update storage expiry after a Walrus blob extension.
+/// Seller-only (requires SellerCap). Monotonic increase to prevent griefing.
+public fun update_storage_end_epoch(
+    seller_cap: &SellerCap,
+    listing: &mut SkillListing,
+    new_end_epoch: u64,
+) {
+    assert!(seller_cap.skill_listing_id == object::id(listing), ENotSeller);
+    assert!(listing.is_finalized, ENotFinalized);
+    assert!(new_end_epoch > listing.storage_end_epoch, EEndEpochNotExtended);
+
+    listing.storage_end_epoch = new_end_epoch;
+
+    sui::event::emit(StorageExtended {
+        listing_id: object::id(listing),
+        new_end_epoch,
+    });
+}
+
 // === View Functions ===
 public fun seller(listing: &SkillListing): address { listing.seller }
 public fun price(listing: &SkillListing): u64 { listing.price }
@@ -187,6 +220,8 @@ public fun encoding_nonce(listing: &SkillListing): u64 { listing.encoding_nonce 
 public fun title(listing: &SkillListing): String { listing.title }
 public fun file_names(listing: &SkillListing): vector<String> { listing.file_names }
 public fun skill_listing_id(cap: &SellerCap): ID { cap.skill_listing_id }
+public fun walrus_blob_object_id(listing: &SkillListing): String { listing.walrus_blob_object_id }
+public fun storage_end_epoch(listing: &SkillListing): u64 { listing.storage_end_epoch }
 
 // === Test-Only Functions ===
 
@@ -210,6 +245,8 @@ public fun create_for_testing(
         walrus_quilt_id: option::none(),
         file_names: vector[b"test_file.txt".to_string()],
         seal_key_id: vector[0u8, 1, 2, 3],
+        walrus_blob_object_id: b"0xblobobj123".to_string(),
+        storage_end_epoch: 100,
         root_hash: vector[0xAA, 0xBB, 0xCC],
         encoding_nonce: 42,
         created_at_epoch: 0,
@@ -228,4 +265,3 @@ public fun create_seller_cap_for_testing(
         skill_listing_id,
     }
 }
-

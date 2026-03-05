@@ -12,11 +12,13 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PriceDisplay } from "@/components/skills/price-display";
 import { WalrusScanLink } from "@/components/walrus-scan-link";
+import { StorageStatusBadge } from "@/components/storage-status-badge";
 import { DecryptButton } from "@/components/purchases/decrypt-button";
 import { useSkillDetail } from "@/hooks/use-skill-detail";
 import { useSellerVault } from "@/hooks/use-seller-vault";
 import { usePurchaseSkill } from "@/hooks/use-purchase-skill";
 import { usePurchaseReceipts } from "@/hooks/use-purchase-receipts";
+import { useWalrusEpoch } from "@/hooks/use-current-epoch";
 import { truncateAddress, formatSui } from "@/lib/utils";
 
 export default function SkillDetailPage({
@@ -30,6 +32,7 @@ export default function SkillDetailPage({
   const { data: vaultId, isLoading: vaultLoading } = useSellerVault(skill?.seller);
   const purchaseMutation = usePurchaseSkill();
   const { data: receipts } = usePurchaseReceipts();
+  const { data: epochInfo } = useWalrusEpoch();
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
 
   const owningReceipt = receipts?.find((r) => r.skillIds.includes(id));
@@ -118,6 +121,15 @@ export default function SkillDetailPage({
             <div>
               <div className="text-sm text-muted-foreground">Storage ID</div>
               <div className="truncate font-mono text-sm">{skill.walrusBlobId}</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Storage Status</div>
+              <div className="mt-1">
+                <StorageStatusBadge
+                  storageEndEpoch={skill.storageEndEpoch}
+                  epochInfo={epochInfo}
+                />
+              </div>
             </div>
           </div>
 
