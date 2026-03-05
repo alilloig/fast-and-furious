@@ -41,6 +41,8 @@ fun setup_and_create_listing(scenario: &mut ts::Scenario) {
         vector[0u8, 1, 2, 3, 4],
         b"0xblobobj_abc123".to_string(),
         50,
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
 
     scenario.return_to_sender(seller_cap);
@@ -218,6 +220,8 @@ fun finalize_activates_and_registers() {
         vector[0u8, 1, 2, 3, 4],
         b"0xblobobj_finalized".to_string(),
         50,
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
 
     assert_eq!(listing.is_active(), true);
@@ -252,6 +256,8 @@ fun finalize_already_finalized_fails() {
         vector[0u8],
         b"0xblobobj_dup".to_string(),
         50,
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
     abort 0
 }
@@ -295,6 +301,8 @@ fun finalize_wrong_seller_cap_fails() {
         vector[0u8],
         b"0xblobobj_bad".to_string(),
         50,
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
     abort 0
 }
@@ -336,6 +344,8 @@ fun finalize_with_empty_file_names_fails() {
         vector[0u8],
         b"0xblobobj_x".to_string(),
         50,
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
     abort 0
 }
@@ -380,6 +390,8 @@ fun finalize_with_too_many_files_fails() {
         vector[0u8],
         b"0xblobobj_x".to_string(),
         50,
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
     abort 0
 }
@@ -422,6 +434,8 @@ fun finalize_with_multiple_files_succeeds() {
         vector[0u8, 1, 2, 3, 4],
         b"0xblobobj_multi".to_string(),
         50,
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
 
     assert_eq!(listing.is_active(), true);
@@ -528,4 +542,20 @@ fun update_storage_end_epoch_unfinalized_fails() {
     // Aborts — listing not finalized
     skill::update_storage_end_epoch(&seller_cap, &mut listing, 100);
     abort 0
+}
+
+#[test]
+fun finalize_stores_root_hash_and_nonce() {
+    let mut scenario = test_utils::begin();
+    setup_and_create_listing(&mut scenario);
+    scenario.next_tx(test_utils::user1());
+
+    let listing = scenario.take_shared<SkillListing>();
+
+    assert_eq!(listing.root_hash(), vector[0xAA, 0xBB, 0xCC]);
+    assert_eq!(listing.encoding_nonce(), 42);
+    assert_eq!(listing.walrus_blob_id(), b"blob_abc123".to_string());
+
+    ts::return_shared(listing);
+    scenario.end();
 }

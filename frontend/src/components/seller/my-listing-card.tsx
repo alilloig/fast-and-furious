@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,10 +30,14 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
   const { data: epochInfo } = useWalrusEpoch();
 
   return (
-    <Card>
+    <Card className="relative transition-colors hover:bg-accent/50">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="line-clamp-1 text-base">{listing.title}</CardTitle>
+          <CardTitle className="line-clamp-1 text-base">
+            <Link href={`/skill/${listing.id}`} className="hover:underline after:absolute after:inset-0">
+              {listing.title}
+            </Link>
+          </CardTitle>
           <div className="flex shrink-0 gap-1.5">
             <Badge variant="secondary" className="text-xs">
               {listing.category}
@@ -53,7 +58,7 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
         <p className="line-clamp-2 text-sm text-muted-foreground">
           {listing.description}
         </p>
-        <div>
+        <div className="relative z-10">
           <div className="text-xs text-muted-foreground mb-0.5">Walrus Blob</div>
           <WalrusScanLink blobId={listing.walrusBlobId} />
         </div>
@@ -77,7 +82,7 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
         {listing.isActive && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button variant="destructive" size="sm">
+              <Button variant="destructive" size="sm" className="relative z-10">
                 Delist
               </Button>
             </DialogTrigger>

@@ -3,6 +3,7 @@
 module wooper::purchase;
 
 // === Imports ===
+use std::string::String;
 use sui::sui::SUI;
 use sui::coin::{Self, Coin};
 use sui::balance::{Self, Balance};
@@ -30,6 +31,7 @@ public struct PurchaseReceipt has key {
     seller: address,
     amount_paid: u64,
     purchased_at_epoch: u64,
+    walrus_blob_id: String,
 }
 
 /// Shared object — accumulates seller revenue from sales.
@@ -115,6 +117,7 @@ public fun purchase_skill(
         seller: listing.seller(),
         amount_paid: price,
         purchased_at_epoch: ctx.epoch(),
+        walrus_blob_id: listing.walrus_blob_id(),
     };
     let receipt_id = object::id(&receipt);
 
@@ -178,6 +181,7 @@ public fun purchase_package(
         seller: package.seller(),
         amount_paid: price,
         purchased_at_epoch: ctx.epoch(),
+        walrus_blob_id: b"".to_string(),
     };
     let receipt_id = object::id(&receipt);
 
@@ -219,6 +223,7 @@ public fun skill_ids(receipt: &PurchaseReceipt): vector<ID> { receipt.skill_ids 
 public fun buyer(receipt: &PurchaseReceipt): address { receipt.buyer }
 public fun seller(receipt: &PurchaseReceipt): address { receipt.seller }
 public fun amount_paid(receipt: &PurchaseReceipt): u64 { receipt.amount_paid }
+public fun walrus_blob_id(receipt: &PurchaseReceipt): String { receipt.walrus_blob_id }
 public fun balance(vault: &SellerVault): u64 { vault.balance.value() }
 public fun vault_seller(vault: &SellerVault): address { vault.seller }
 
@@ -239,6 +244,7 @@ public fun create_receipt_for_testing(
         seller,
         amount_paid,
         purchased_at_epoch: ctx.epoch(),
+        walrus_blob_id: b"blob123".to_string(),
     }
 }
 

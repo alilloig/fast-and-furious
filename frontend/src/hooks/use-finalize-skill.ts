@@ -17,6 +17,8 @@ interface FinalizeSkillArgs {
   sealKeyId: number[];
   walrusBlobObjectId: string;
   storageEndEpoch: number;
+  rootHash: number[];
+  encodingNonce: number;
 }
 
 /**
@@ -43,6 +45,8 @@ export function useFinalizeSkill() {
           tx.pure.vector("u8", args.sealKeyId),
           tx.pure.string(args.walrusBlobObjectId),
           tx.pure.u64(args.storageEndEpoch),
+          tx.pure.vector("u8", args.rootHash),
+          tx.pure.u64(args.encodingNonce),
         ],
       });
       return dAppKit.signAndExecuteTransaction({ transaction: tx });

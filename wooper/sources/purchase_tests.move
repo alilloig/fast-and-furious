@@ -52,6 +52,8 @@ fun setup_skill_and_vault(scenario: &mut ts::Scenario) {
         vector[0u8, 1, 2, 3, 4],
         b"0xblobobj_abc".to_string(),
         50,
+        vector[0xAA, 0xBB, 0xCC],
+        42,
     );
 
     scenario.return_to_sender(seller_cap);
@@ -297,6 +299,7 @@ fun purchase_package_success() {
         &seller_cap_a, &mut listing_a, &mut registry,
         b"blob_a".to_string(), option::none(), vector[b"skill_a.txt".to_string()], vector[0u8],
         b"0xblobobj_a".to_string(), 50,
+        vector[0xAA, 0xBB, 0xCC], 42,
     );
     scenario.return_to_sender(seller_cap_a);
     ts::return_shared(listing_a);
@@ -321,6 +324,7 @@ fun purchase_package_success() {
         &seller_cap_b, &mut listing_b, &mut registry,
         b"blob_b".to_string(), option::none(), vector[b"skill_b.txt".to_string()], vector[1u8],
         b"0xblobobj_b".to_string(), 50,
+        vector[0xAA, 0xBB, 0xCC], 42,
     );
     scenario.return_to_sender(seller_cap_b);
     ts::return_shared(listing_b);
@@ -371,5 +375,30 @@ fun purchase_package_success() {
     assert_eq!(receipt.amount_paid(), 900_000_000);
     scenario.return_to_sender(receipt);
 
+    scenario.end();
+}
+
+#[test]
+fun purchase_skill_snapshots_blob_id() {
+    let mut scenario = test_utils::begin();
+    setup_skill_and_vault(&mut scenario);
+    scenario.next_tx(test_utils::user2());
+
+    let config = scenario.take_shared<MarketplaceConfig>();
+    let listing = scenario.take_shared<SkillListing>();
+    let mut vault = scenario.take_shared<SellerVault>();
+    let payment = coin::mint_for_testing<SUI>(1_000_000_000, scenario.ctx());
+
+    purchase::purchase_skill(&config, &listing, &mut vault, payment, scenario.ctx());
+
+    ts::return_shared(config);
+    ts::return_shared(listing);
+    ts::return_shared(vault);
+    scenario.next_tx(test_utils::user2());
+
+    let receipt = scenario.take_from_sender<PurchaseReceipt>();
+    assert_eq!(receipt.walrus_blob_id(), b"blob_abc".to_string());
+
+    scenario.return_to_sender(receipt);
     scenario.end();
 }

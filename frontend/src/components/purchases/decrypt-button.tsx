@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { EncryptedObject } from "@mysten/seal";
 import { Transaction } from "@mysten/sui/transactions";
 import { fromHex } from "@mysten/sui/utils";
@@ -9,9 +9,14 @@ import { useSessionKey } from "@/hooks/use-session-key";
 import { useCurrentAccount, useCurrentClient } from "@mysten/dapp-kit-react";
 import { getSealClient } from "@/lib/seal";
 import { MARKETPLACE_PACKAGE_ID, PACKAGE_VERSION_ID } from "@/lib/constants";
+import { verifyBlobIntegrity } from "@/lib/verify-integrity";
+import { IntegrityPanel } from "./integrity-panel";
+import type { SkillListing, PurchaseReceipt, IntegrityVerification } from "@/lib/types";
 
 interface DecryptButtonProps {
   receiptId: string;
+  receipt: PurchaseReceipt;
+  skill: SkillListing;
   walrusBlobId: string;
   walrusQuiltId: string | null;
   fileNames: string[];
@@ -32,6 +37,8 @@ function triggerDownload(data: Uint8Array, filename: string) {
 
 export function DecryptButton({
   receiptId,
+  receipt,
+  skill,
   walrusBlobId,
   walrusQuiltId,
   fileNames,
@@ -43,6 +50,8 @@ export function DecryptButton({
     return (
       <MultiFileDecrypt
         receiptId={receiptId}
+        receipt={receipt}
+        skill={skill}
         walrusQuiltId={walrusQuiltId}
         fileNames={fileNames}
       />
@@ -52,6 +61,8 @@ export function DecryptButton({
   return (
     <SingleFileDecrypt
       receiptId={receiptId}
+      receipt={receipt}
+      skill={skill}
       walrusBlobId={walrusBlobId}
       fileName={fileNames[0] ?? `${skillTitle.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.txt`}
     />
@@ -60,15 +71,20 @@ export function DecryptButton({
 
 function SingleFileDecrypt({
   receiptId,
+  receipt,
+  skill,
   walrusBlobId,
   fileName,
 }: {
   receiptId: string;
+  receipt: PurchaseReceipt;
+  skill: SkillListing;
   walrusBlobId: string;
   fileName: string;
 }) {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [verification, setVerification] = useState<IntegrityVerification | null>(null);
   const { getOrCreateSessionKey } = useSessionKey();
   const account = useCurrentAccount();
   const suiClient = useCurrentClient();
@@ -85,6 +101,10 @@ function SingleFileDecrypt({
         throw new Error(`Failed to fetch blob: ${blobResponse.statusText}`);
       }
       const encryptedBytes = new Uint8Array(await blobResponse.arrayBuffer());
+
+      // Verify integrity of downloaded encrypted bytes
+      const integrityResult = await verifyBlobIntegrity(encryptedBytes, skill, receipt, suiClient);
+      setVerification(integrityResult);
 
       const parsed = EncryptedObject.parse(encryptedBytes);
 
@@ -120,28 +140,35 @@ function SingleFileDecrypt({
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={handleDecrypt}
-        disabled={status === "loading"}
-      >
-        {status === "loading" ? "Decrypting..." : "Decrypt & Download"}
-      </Button>
-      {status === "error" && error && (
-        <span className="text-sm text-destructive">{error}</span>
-      )}
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleDecrypt}
+          disabled={status === "loading"}
+        >
+          {status === "loading" ? "Decrypting..." : "Decrypt & Download"}
+        </Button>
+        {status === "error" && error && (
+          <span className="text-sm text-destructive">{error}</span>
+        )}
+      </div>
+      <IntegrityPanel verification={verification} />
     </div>
   );
 }
 
 function MultiFileDecrypt({
   receiptId,
+  receipt,
+  skill,
   walrusQuiltId,
   fileNames,
 }: {
   receiptId: string;
+  receipt: PurchaseReceipt;
+  skill: SkillListing;
   walrusQuiltId: string;
   fileNames: string[];
 }) {
@@ -149,9 +176,50 @@ function MultiFileDecrypt({
     Record<string, "idle" | "loading" | "done" | "error">
   >({});
   const [fileErrors, setFileErrors] = useState<Record<string, string>>({});
+  const [verification, setVerification] = useState<IntegrityVerification | null>(null);
+  const verificationPromiseRef = useRef<Promise<IntegrityVerification> | null>(null);
   const { getOrCreateSessionKey } = useSessionKey();
   const account = useCurrentAccount();
   const suiClient = useCurrentClient();
+
+  function getOrStartVerification() {
+    if (verificationPromiseRef.current) return verificationPromiseRef.current;
+
+    setVerification({ status: "verifying", rootHashMatch: null, blobIdMatch: null, receiptBlobIdMatch: null, derivedRootHash: null, derivedBlobId: null, onChainRootHash: null, onChainBlobId: null, receiptBlobId: null, verifiedAt: null, error: null, errorType: null });
+
+    const promise = (async () => {
+      try {
+        const blobResponse = await fetch(`/api/walrus/download/${walrusQuiltId}`);
+        if (!blobResponse.ok) {
+          throw new Error(`Failed to fetch quilt blob: ${blobResponse.statusText}`);
+        }
+        const quiltBytes = new Uint8Array(await blobResponse.arrayBuffer());
+        const result = await verifyBlobIntegrity(quiltBytes, skill, receipt, suiClient);
+        setVerification(result);
+        return result;
+      } catch (err) {
+        const failedResult: IntegrityVerification = {
+          status: "failed",
+          rootHashMatch: null,
+          blobIdMatch: null,
+          receiptBlobIdMatch: null,
+          derivedRootHash: null,
+          derivedBlobId: null,
+          onChainRootHash: skill.rootHash || null,
+          onChainBlobId: skill.walrusBlobId,
+          receiptBlobId: receipt.walrusBlobId || null,
+          verifiedAt: null,
+          error: err instanceof Error ? err.message : "Verification failed",
+          errorType: "unknown",
+        };
+        setVerification(failedResult);
+        return failedResult;
+      }
+    })();
+
+    verificationPromiseRef.current = promise;
+    return promise;
+  }
 
   async function handleDecryptFile(fileName: string) {
     setFileStatus((prev) => ({ ...prev, [fileName]: "loading" }));
@@ -162,6 +230,8 @@ function MultiFileDecrypt({
     });
 
     try {
+      getOrStartVerification(); // fire-and-forget: runs in parallel with decrypt
+
       const sessionKey = await getOrCreateSessionKey();
 
       const blobResponse = await fetch(
@@ -224,7 +294,7 @@ function MultiFileDecrypt({
                 ? "Decrypting..."
                 : status === "done"
                   ? "Downloaded"
-                  : "Download"}
+                  : "Decrypt & Download"}
             </Button>
             <span className="truncate font-mono text-sm">{name}</span>
             {status === "error" && fileErrors[name] && (
@@ -235,6 +305,7 @@ function MultiFileDecrypt({
           </div>
         );
       })}
+      <IntegrityPanel verification={verification} />
     </div>
   );
 }

@@ -12,6 +12,8 @@ export interface SkillListing {
   sealKeyId: string;
   walrusBlobObjectId: string;
   storageEndEpoch: number;
+  rootHash: string;
+  encodingNonce: number;
   createdAtEpoch: number;
   isActive: boolean;
   isFinalized: boolean;
@@ -48,6 +50,7 @@ export interface PurchaseReceipt {
   seller: string;
   amountPaid: bigint;
   purchasedAtEpoch: number;
+  walrusBlobId: string;
 }
 
 export interface SellerCap {
@@ -78,4 +81,19 @@ export interface WalrusExtensionEstimate {
   encodedSizeMiB: number;
   epochs: number;
   storageFrost: bigint;
+}
+
+export interface IntegrityVerification {
+  status: 'idle' | 'verifying' | 'verified' | 'failed';
+  rootHashMatch: boolean | null;
+  blobIdMatch: boolean | null;
+  receiptBlobIdMatch: boolean | null;
+  derivedRootHash: string | null;
+  derivedBlobId: string | null;
+  onChainRootHash: string | null;
+  onChainBlobId: string | null;
+  receiptBlobId: string | null;
+  verifiedAt: Date | null;
+  error: string | null;
+  errorType: 'inconsistent' | 'not_certified' | 'transient' | 'unknown' | null;
 }

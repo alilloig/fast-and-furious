@@ -201,78 +201,80 @@ export function CreateSkillForm() {
         encryptedFiles.push({ name: files[i].name, data: encryptedObject });
       }
 
-      // Step 3: Upload encrypted bytes to Walrus
+      // Step 3: Assemble upload payload and compute integrity metadata
       setStep("uploading");
       let walrusBlobId: string;
       let walrusQuiltId: string | null = null;
       let walrusBlobObjectId = "";
       let storageEndEpoch = 0;
+      let rootHash: number[] = [];
+      let encodingNonce = 0;
 
-      const sellerAddress = currentAccount?.address ?? "";
-      const sendToParam = sellerAddress ? `&send_object_to=${sellerAddress}` : "";
+      const { WalrusClient } = await import("@mysten/walrus");
+      const walrusClient = new WalrusClient({ network: "testnet", suiClient });
+
+      let uploadBytes: Uint8Array;
 
       if (encryptedFiles.length === 1) {
-        // Single file — use existing blob upload
-        setStepDetail("Uploading file to Walrus...");
-        const uploadResponse = await fetch(`/api/walrus/upload?epochs=${epochs}${sendToParam}`, {
-          method: "POST",
-          body: encryptedFiles[0].data as BodyInit,
-          headers: { "Content-Type": "application/octet-stream" },
-        });
-        if (!uploadResponse.ok) {
-          throw new Error(
-            `Walrus upload failed: ${uploadResponse.statusText}`,
-          );
-        }
-        const uploadResult = await uploadResponse.json();
-        const blobObject = uploadResult.newlyCreated?.blobObject;
-        walrusBlobId =
-          blobObject?.blobId ??
-          uploadResult.alreadyCertified?.blobId;
-        walrusBlobObjectId = blobObject?.id ?? "";
-        storageEndEpoch = blobObject?.storage?.endEpoch ?? 0;
-        if (!walrusBlobId) {
-          throw new Error("No blob ID returned from Walrus");
-        }
+        uploadBytes = encryptedFiles[0].data;
       } else {
-        // Multiple files — use quilt upload
-        setStepDetail(`Uploading ${encryptedFiles.length} files to Walrus...`);
-        const formData = new FormData();
-        for (const ef of encryptedFiles) {
-          formData.append(
-            ef.name,
-            new Blob([ef.data as BlobPart], { type: "application/octet-stream" }),
-            ef.name,
-          );
+        // Assemble quilt client-side so we can compute integrity metadata
+        setStepDetail("Assembling quilt...");
+        const { encodeQuilt } = await import("@mysten/walrus");
+        const systemState = await walrusClient.systemState();
+        const numShards = systemState.committee.n_shards;
+        const quiltBlobs = encryptedFiles.map((ef) => ({
+          contents: ef.data,
+          identifier: ef.name,
+        }));
+        const { quilt } = encodeQuilt({ blobs: quiltBlobs, numShards });
+        uploadBytes = quilt;
+      }
+
+      // Compute Walrus blob metadata for integrity verification (works for both blob and quilt)
+      try {
+        const metadata = await walrusClient.computeBlobMetadata({ bytes: uploadBytes });
+        rootHash = Array.from(new Uint8Array(metadata.rootHash));
+        const nonceBytes = metadata.nonce;
+        const nonceDv = new DataView(new ArrayBuffer(8));
+        for (let i = 0; i < Math.min(nonceBytes.length, 8); i++) {
+          nonceDv.setUint8(i, nonceBytes[i]);
         }
+        encodingNonce = Number(nonceDv.getBigUint64(0, true));
+      } catch {
+        console.warn("Could not compute blob metadata for integrity verification");
+      }
 
-        const uploadResponse = await fetch(`/api/walrus/upload-quilt?epochs=${epochs}${sendToParam}`, {
-          method: "POST",
-          body: formData,
-        });
-        if (!uploadResponse.ok) {
-          throw new Error(
-            `Walrus upload failed: ${uploadResponse.statusText}`,
-          );
-        }
-        const quiltResult = await uploadResponse.json();
+      // Upload assembled bytes to Walrus via existing blob route
+      const sellerAddress = currentAccount?.address ?? "";
+      const sendToParam = sellerAddress ? `&send_object_to=${sellerAddress}` : "";
+      setStepDetail(
+        encryptedFiles.length === 1
+          ? "Uploading file to Walrus..."
+          : `Uploading ${encryptedFiles.length} files to Walrus...`,
+      );
+      const uploadResponse = await fetch(`/api/walrus/upload?epochs=${epochs}${sendToParam}`, {
+        method: "POST",
+        body: uploadBytes as BodyInit,
+        headers: { "Content-Type": "application/octet-stream" },
+      });
+      if (!uploadResponse.ok) {
+        throw new Error(`Walrus upload failed: ${uploadResponse.statusText}`);
+      }
+      const uploadResult = await uploadResponse.json();
+      const blobObject = uploadResult.newlyCreated?.blobObject;
+      walrusBlobId =
+        blobObject?.blobId ??
+        uploadResult.alreadyCertified?.blobId;
+      walrusBlobObjectId = blobObject?.id ?? "";
+      storageEndEpoch = blobObject?.storage?.endEpoch ?? 0;
+      if (!walrusBlobId) {
+        throw new Error("No blob ID returned from Walrus");
+      }
 
-        // Walrus quilt API wraps the blob store result under `blobStoreResult`
-        const blobStore = quiltResult.blobStoreResult;
-        const quiltBlobObject = blobStore?.newlyCreated?.blobObject;
-        walrusBlobId =
-          quiltBlobObject?.blobId ??
-          blobStore?.alreadyCertified?.blobId ??
-          "";
-        walrusBlobObjectId = quiltBlobObject?.id ?? "";
-        storageEndEpoch = quiltBlobObject?.storage?.endEpoch ?? 0;
-
-        // The quilt ID IS the blobId (Walrus docs: "the quilt ID (blobId)")
-        walrusQuiltId = walrusBlobId || null;
-
-        if (!walrusQuiltId) {
-          throw new Error("No file ID returned from Walrus");
-        }
+      // For multi-file listings, the quilt ID is the blob ID
+      if (encryptedFiles.length > 1) {
+        walrusQuiltId = walrusBlobId;
       }
 
       // Step 4: Finalize listing on-chain (store walrus/seal data, activate, register)
@@ -287,6 +289,8 @@ export function CreateSkillForm() {
         sealKeyId,
         walrusBlobObjectId,
         storageEndEpoch,
+        rootHash,
+        encodingNonce,
       });
 
       setStep("done");

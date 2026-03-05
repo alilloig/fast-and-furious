@@ -74,6 +74,8 @@ export function ReceiptCard({ receipt, skills }: ReceiptCardProps) {
                   <div className="relative z-10">
                     <DecryptButton
                       receiptId={receipt.id}
+                      receipt={receipt}
+                      skill={skill}
                       walrusBlobId={skill.walrusBlobId}
                       walrusQuiltId={skill.walrusQuiltId}
                       fileNames={skill.fileNames}

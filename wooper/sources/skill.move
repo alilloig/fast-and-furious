@@ -38,6 +38,8 @@ public struct SkillListing has key {
     seal_key_id: vector<u8>,
     walrus_blob_object_id: String,
     storage_end_epoch: u64,
+    root_hash: vector<u8>,
+    encoding_nonce: u64,
     created_at_epoch: u64,
     is_active: bool,
     is_finalized: bool,
@@ -103,6 +105,8 @@ public fun create(
         seal_key_id: vector[],
         walrus_blob_object_id: b"".to_string(),
         storage_end_epoch: 0,
+        root_hash: vector[],
+        encoding_nonce: 0,
         created_at_epoch: ctx.epoch(),
         is_active: false,
         is_finalized: false,
@@ -131,6 +135,8 @@ public fun finalize(
     seal_key_id: vector<u8>,
     walrus_blob_object_id: String,
     storage_end_epoch: u64,
+    root_hash: vector<u8>,
+    encoding_nonce: u64,
 ) {
     assert!(seller_cap.skill_listing_id == object::id(listing), ENotSeller);
     assert!(!listing.is_finalized, EAlreadyFinalized);
@@ -143,6 +149,8 @@ public fun finalize(
     listing.seal_key_id = seal_key_id;
     listing.walrus_blob_object_id = walrus_blob_object_id;
     listing.storage_end_epoch = storage_end_epoch;
+    listing.root_hash = root_hash;
+    listing.encoding_nonce = encoding_nonce;
     listing.is_finalized = true;
     listing.is_active = true;
 
@@ -206,6 +214,9 @@ public fun price(listing: &SkillListing): u64 { listing.price }
 public fun is_active(listing: &SkillListing): bool { listing.is_active }
 public fun is_finalized(listing: &SkillListing): bool { listing.is_finalized }
 public fun seal_key_id(listing: &SkillListing): vector<u8> { listing.seal_key_id }
+public fun walrus_blob_id(listing: &SkillListing): String { listing.walrus_blob_id }
+public fun root_hash(listing: &SkillListing): vector<u8> { listing.root_hash }
+public fun encoding_nonce(listing: &SkillListing): u64 { listing.encoding_nonce }
 public fun title(listing: &SkillListing): String { listing.title }
 public fun file_names(listing: &SkillListing): vector<String> { listing.file_names }
 public fun skill_listing_id(cap: &SellerCap): ID { cap.skill_listing_id }
@@ -236,6 +247,8 @@ public fun create_for_testing(
         seal_key_id: vector[0u8, 1, 2, 3],
         walrus_blob_object_id: b"0xblobobj123".to_string(),
         storage_end_epoch: 100,
+        root_hash: vector[0xAA, 0xBB, 0xCC],
+        encoding_nonce: 42,
         created_at_epoch: 0,
         is_active: true,
         is_finalized: true,
@@ -252,4 +265,3 @@ public fun create_seller_cap_for_testing(
         skill_listing_id,
     }
 }
-
