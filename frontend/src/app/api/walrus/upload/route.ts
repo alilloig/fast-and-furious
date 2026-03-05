@@ -10,8 +10,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const epochs = req.nextUrl.searchParams.get("epochs") ?? "5";
   const body = await req.arrayBuffer();
-  const response = await fetch(`${WALRUS_PUBLISHER_URL}/v1/blobs`, {
+  const response = await fetch(`${WALRUS_PUBLISHER_URL}/v1/blobs?epochs=${epochs}`, {
     method: "PUT",
     body,
     headers: { "Content-Type": "application/octet-stream" },

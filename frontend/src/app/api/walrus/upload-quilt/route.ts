@@ -17,8 +17,9 @@ export async function POST(req: NextRequest) {
     outgoing.append(key, value);
   }
 
+  const epochs = req.nextUrl.searchParams.get("epochs") ?? "5";
   const response = await fetch(
-    `${WALRUS_PUBLISHER_URL}/v1/quilts?epochs=5`,
+    `${WALRUS_PUBLISHER_URL}/v1/quilts?epochs=${epochs}`,
     {
       method: "PUT",
       body: outgoing,

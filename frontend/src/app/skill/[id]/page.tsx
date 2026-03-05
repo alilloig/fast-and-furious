@@ -135,6 +135,8 @@ export default function SkillDetailPage({
                 <DecryptButton
                   receiptId={owningReceipt.id}
                   walrusBlobId={skill!.walrusBlobId}
+                  walrusQuiltId={skill!.walrusQuiltId}
+                  fileNames={skill!.fileNames}
                   skillTitle={skill!.title}
                 />
               )}

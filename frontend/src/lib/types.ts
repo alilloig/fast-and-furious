@@ -63,3 +63,11 @@ export interface SellerVaultInfo {
   seller: string;
   balance: bigint;
 }
+
+export interface WalrusStorageEstimate {
+  encodedSizeMiB: number;
+  epochs: number;
+  storageFrost: bigint;
+  writeFrost: bigint;
+  totalFrost: bigint;
+}

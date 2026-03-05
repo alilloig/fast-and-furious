@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toHex, fromHex } from "@mysten/sui/utils";
 import { useCurrentClient } from "@mysten/dapp-kit-react";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorAlert } from "@/components/error-alert";
+import { StorageCostEstimate } from "@/components/seller/storage-cost-estimate";
 import { useCreateSkill } from "@/hooks/use-create-skill";
 import { useFinalizeSkill } from "@/hooks/use-finalize-skill";
 import { getSealClient } from "@/lib/seal";
@@ -28,7 +29,9 @@ import {
   MAX_FILES_PER_LISTING,
   MAX_TOTAL_FILE_SIZE_BYTES,
   ALLOWED_FILE_EXTENSIONS,
+  WALRUS_DEFAULT_EPOCHS,
 } from "@/lib/constants";
+import { estimateWalrusCost } from "@/lib/walrus-cost";
 
 type Step =
   | "form"
@@ -125,6 +128,12 @@ export function CreateSkillForm() {
   const [category, setCategory] = useState("");
   const [tagsStr, setTagsStr] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [epochs, setEpochs] = useState(WALRUS_DEFAULT_EPOCHS);
+
+  const storageEstimate = useMemo(
+    () => estimateWalrusCost(files, epochs),
+    [files, epochs],
+  );
 
   const [step, setStep] = useState<Step>("form");
   const [stepDetail, setStepDetail] = useState("");
@@ -198,7 +207,7 @@ export function CreateSkillForm() {
       if (encryptedFiles.length === 1) {
         // Single file — use existing blob upload
         setStepDetail("Uploading file to Walrus...");
-        const uploadResponse = await fetch("/api/walrus/upload", {
+        const uploadResponse = await fetch(`/api/walrus/upload?epochs=${epochs}`, {
           method: "POST",
           body: encryptedFiles[0].data as BodyInit,
           headers: { "Content-Type": "application/octet-stream" },
@@ -227,7 +236,7 @@ export function CreateSkillForm() {
           );
         }
 
-        const uploadResponse = await fetch("/api/walrus/upload-quilt", {
+        const uploadResponse = await fetch(`/api/walrus/upload-quilt?epochs=${epochs}`, {
           method: "POST",
           body: formData,
         });
@@ -390,6 +399,28 @@ export function CreateSkillForm() {
                 </div>
               </div>
             )}
+            {files.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="epochs">Storage Duration</Label>
+                <Select
+                  value={String(epochs)}
+                  onValueChange={(v) => setEpochs(Number(v))}
+                  disabled={isPending}
+                >
+                  <SelectTrigger id="epochs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 5, 10, 20, 53].map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n} epoch{n !== 1 ? "s" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <StorageCostEstimate estimate={storageEstimate} />
             <p className="text-xs text-muted-foreground">
               Upload up to {MAX_FILES_PER_LISTING} files (50MB total). Files
               are encrypted with Seal before upload. Only buyers with a valid
