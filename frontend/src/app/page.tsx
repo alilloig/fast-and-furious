@@ -23,7 +23,7 @@ export default function HomePage() {
           <div className="mx-auto mb-6 w-32 md:w-40 animate-[bounce_3s_ease-in-out_infinite] drop-shadow-[0_0_25px_rgba(96,165,250,0.4)]">
             <Image
               src="/wooper.png"
-              alt="Wooper mascot"
+              alt="Playbooks mascot"
               width={160}
               height={160}
               priority
@@ -31,7 +31,7 @@ export default function HomePage() {
             />
           </div>
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-            Wooper - The AI Playbooks Marketplace
+            Playbooks — The AI Playbooks Marketplace
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
             Buy and sell AI playbooks for your coding assistants. Upload claude.md configs,

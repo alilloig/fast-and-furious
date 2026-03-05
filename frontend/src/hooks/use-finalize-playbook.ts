@@ -41,7 +41,10 @@ export function useFinalizePlaybook() {
           tx.object(LISTINGS_REGISTRY_ID),
           tx.pure.string(args.walrusBlobId),
           tx.pure.option("string", args.walrusQuiltId),
-          tx.pure.vector("string", args.fileNames),
+          tx.makeMoveVec({
+            type: "0x1::string::String",
+            elements: args.fileNames.map(name => tx.pure.string(name)),
+          }),
           tx.pure.vector("u8", args.sealKeyId),
           tx.pure.string(args.walrusBlobObjectId),
           tx.pure.u64(args.storageEndEpoch),

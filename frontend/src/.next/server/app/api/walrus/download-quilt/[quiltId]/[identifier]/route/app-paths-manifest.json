@@ -1,0 +1,3 @@
+{
+  "/api/walrus/download-quilt/[quiltId]/[identifier]/route": "app/api/walrus/download-quilt/[quiltId]/[identifier]/route.js"
+}

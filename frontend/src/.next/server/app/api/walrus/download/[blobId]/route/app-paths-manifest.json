@@ -1,0 +1,3 @@
+{
+  "/api/walrus/download/[blobId]/route": "app/api/walrus/download/[blobId]/route.js"
+}

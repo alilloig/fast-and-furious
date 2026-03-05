@@ -1,0 +1,14 @@
+{
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/walrus/download-quilt/[quiltId]/[identifier]/route": "app/api/walrus/download-quilt/[quiltId]/[identifier]/route.js",
+  "/api/walrus/download/[blobId]/route": "app/api/walrus/download/[blobId]/route.js",
+  "/api/walrus/upload/route": "app/api/walrus/upload/route.js",
+  "/explore/page": "app/explore/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/page": "app/page.js",
+  "/playbook/[id]/page": "app/playbook/[id]/page.js",
+  "/purchases/page": "app/purchases/page.js",
+  "/seller/create/page": "app/seller/create/page.js",
+  "/seller/dashboard/page": "app/seller/dashboard/page.js"
+}

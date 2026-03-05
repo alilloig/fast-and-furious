@@ -374,19 +374,20 @@ fun finalize_with_too_many_files_fails() {
     let mut listing = scenario.take_shared<SkillListing>();
     let mut registry = scenario.take_shared<ListingsRegistry>();
 
-    // 11 file names — exceeds MAX_FILES (10)
+    // 1001 file names — exceeds MAX_FILES (1000)
+    let mut too_many_files = vector[];
+    let mut i = 0;
+    while (i < 1001) {
+        too_many_files.push_back(b"file.txt".to_string());
+        i = i + 1;
+    };
     skill::finalize(
         &seller_cap,
         &mut listing,
         &mut registry,
         b"blob_x".to_string(),
         option::none(),
-        vector[
-            b"f1.txt".to_string(), b"f2.txt".to_string(), b"f3.txt".to_string(),
-            b"f4.txt".to_string(), b"f5.txt".to_string(), b"f6.txt".to_string(),
-            b"f7.txt".to_string(), b"f8.txt".to_string(), b"f9.txt".to_string(),
-            b"f10.txt".to_string(), b"f11.txt".to_string(),
-        ],
+        too_many_files,
         vector[0u8],
         b"0xblobobj_x".to_string(),
         50,

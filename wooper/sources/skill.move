@@ -18,7 +18,7 @@ const EMaxFilesExceeded: u64 = 207;
 const EEndEpochNotExtended: u64 = 208;
 
 // === Constants ===
-const MAX_FILES: u64 = 10;
+const MAX_FILES: u64 = 1000;
 
 // === Structs ===
 
