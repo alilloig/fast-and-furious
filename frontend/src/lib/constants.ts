@@ -42,7 +42,7 @@ export const PACKAGE_SELLER_CAP_TYPE = `${MARKETPLACE_PACKAGE_ID}::package_listi
 
 // --- Walrus Storage Estimation ---
 export const WALRUS_ENCODING_FACTOR = 5;
-export const WALRUS_METADATA_OVERHEAD_BYTES = 64 * 1024 * 1024; // ~64 MiB
+export const WALRUS_METADATA_OVERHEAD_BYTES = 64 * 1024; // ~64 KiB
 export const SEAL_ENCRYPTION_OVERHEAD_PER_FILE = 200; // bytes
 export const WALRUS_FROST_PER_MIB_PER_EPOCH = 100_000n; // 0.0001 WAL
 export const WALRUS_WRITE_FEE_FROST = 20_000n;
