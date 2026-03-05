@@ -18,8 +18,11 @@ export async function POST(req: NextRequest) {
   }
 
   const epochs = req.nextUrl.searchParams.get("epochs") ?? "5";
+  const sendTo = req.nextUrl.searchParams.get("send_object_to") ?? "";
+  let url = `${WALRUS_PUBLISHER_URL}/v1/quilts?epochs=${epochs}`;
+  if (sendTo) url += `&send_object_to=${sendTo}`;
   const response = await fetch(
-    `${WALRUS_PUBLISHER_URL}/v1/quilts?epochs=${epochs}`,
+    url,
     {
       method: "PUT",
       body: outgoing,

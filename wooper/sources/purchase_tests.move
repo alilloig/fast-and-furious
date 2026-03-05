@@ -50,6 +50,8 @@ fun setup_skill_and_vault(scenario: &mut ts::Scenario) {
         option::none(),
         vector[b"skill_file.txt".to_string()],
         vector[0u8, 1, 2, 3, 4],
+        b"0xblobobj_abc".to_string(),
+        50,
     );
 
     scenario.return_to_sender(seller_cap);
@@ -294,6 +296,7 @@ fun purchase_package_success() {
     skill::finalize(
         &seller_cap_a, &mut listing_a, &mut registry,
         b"blob_a".to_string(), option::none(), vector[b"skill_a.txt".to_string()], vector[0u8],
+        b"0xblobobj_a".to_string(), 50,
     );
     scenario.return_to_sender(seller_cap_a);
     ts::return_shared(listing_a);
@@ -317,6 +320,7 @@ fun purchase_package_success() {
     skill::finalize(
         &seller_cap_b, &mut listing_b, &mut registry,
         b"blob_b".to_string(), option::none(), vector[b"skill_b.txt".to_string()], vector[1u8],
+        b"0xblobobj_b".to_string(), 50,
     );
     scenario.return_to_sender(seller_cap_b);
     ts::return_shared(listing_b);

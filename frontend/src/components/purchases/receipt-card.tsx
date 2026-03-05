@@ -8,6 +8,8 @@ import { DecryptButton } from "./decrypt-button";
 import type { PurchaseReceipt, SkillListing } from "@/lib/types";
 import { truncateAddress } from "@/lib/utils";
 import { WalrusScanLink } from "@/components/walrus-scan-link";
+import { useSuiEpoch } from "@/hooks/use-current-epoch";
+import { suiEpochToApproxDate, formatEpochDate } from "@/lib/walrus-epoch";
 
 interface ReceiptCardProps {
   receipt: PurchaseReceipt;
@@ -15,6 +17,7 @@ interface ReceiptCardProps {
 }
 
 export function ReceiptCard({ receipt, skills }: ReceiptCardProps) {
+  const { data: suiEpoch } = useSuiEpoch();
   // Map skill IDs to resolved skill data
   const skillMap = new Map(skills.map((s) => [s.id, s]));
 
@@ -25,7 +28,18 @@ export function ReceiptCard({ receipt, skills }: ReceiptCardProps) {
           <CardTitle className="text-base">
             {receipt.skillIds.length === 1 ? "Skill Purchase" : "Bundle Purchase"}
           </CardTitle>
-          <Badge variant="secondary">Epoch {receipt.purchasedAtEpoch}</Badge>
+          <Badge variant="secondary">
+            {suiEpoch
+              ? formatEpochDate(
+                  suiEpochToApproxDate(
+                    receipt.purchasedAtEpoch,
+                    suiEpoch.epoch,
+                    suiEpoch.epochStartMs,
+                    suiEpoch.epochDurationMs,
+                  ),
+                )
+              : `Epoch ${receipt.purchasedAtEpoch}`}
+          </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

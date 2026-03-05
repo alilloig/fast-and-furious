@@ -31,11 +31,11 @@ export default function HomePage() {
             />
           </div>
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-            AI Skills Marketplace
+            Wooper - The AI Playbooks Marketplace
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Discover, buy, and sell AI skills — prompts, agents, and tool
-            configurations — secured by Sui and encrypted with Seal.
+            Buy and sell AI playbooks for your coding assistants. Upload skills, agent orchestrators, 
+            and claude.md configs — stored on Walrus and secured with Sui + Seal.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
             <Button asChild size="lg">

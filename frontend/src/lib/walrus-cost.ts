@@ -5,7 +5,7 @@ import {
   WALRUS_FROST_PER_MIB_PER_EPOCH,
   WALRUS_WRITE_FEE_FROST,
 } from "./constants";
-import type { WalrusStorageEstimate } from "./types";
+import type { WalrusExtensionEstimate, WalrusStorageEstimate } from "./types";
 
 /**
  * Estimate Walrus storage cost for a set of files.
@@ -37,4 +37,16 @@ export function estimateWalrusCost(
     writeFrost: WALRUS_WRITE_FEE_FROST,
     totalFrost,
   };
+}
+
+/**
+ * Estimate Walrus extension cost (storage only — no write fee for extensions).
+ */
+export function estimateExtensionCost(
+  encodedSizeMiB: number,
+  epochs: number,
+): WalrusExtensionEstimate {
+  const storageFrost =
+    BigInt(encodedSizeMiB) * WALRUS_FROST_PER_MIB_PER_EPOCH * BigInt(epochs);
+  return { encodedSizeMiB, epochs, storageFrost };
 }

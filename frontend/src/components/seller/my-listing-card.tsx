@@ -15,14 +15,18 @@ import {
 } from "@/components/ui/dialog";
 import { PriceDisplay } from "@/components/skills/price-display";
 import { WalrusScanLink } from "@/components/walrus-scan-link";
+import { StorageStatusBadge } from "@/components/storage-status-badge";
+import { ExtendStorageDialog } from "@/components/seller/extend-storage-dialog";
 import { ErrorAlert } from "@/components/error-alert";
 import { useDelistSkill } from "@/hooks/use-delist-skill";
+import { useWalrusEpoch } from "@/hooks/use-current-epoch";
 import type { MyListing } from "@/hooks/use-my-listings";
 
 export function MyListingCard({ myListing }: { myListing: MyListing }) {
   const { cap, listing } = myListing;
   const [open, setOpen] = useState(false);
   const delistMutation = useDelistSkill();
+  const { data: epochInfo } = useWalrusEpoch();
 
   return (
     <Card>
@@ -36,6 +40,12 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
             <Badge variant={listing.isActive ? "default" : "outline"} className="text-xs">
               {listing.isActive ? "Active" : "Delisted"}
             </Badge>
+            {listing.isFinalized && (
+              <StorageStatusBadge
+                storageEndEpoch={listing.storageEndEpoch}
+                epochInfo={epochInfo}
+              />
+            )}
           </div>
         </div>
       </CardHeader>
@@ -50,6 +60,20 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
       </CardContent>
       <CardFooter className="flex items-center justify-between">
         <PriceDisplay price={listing.price} className="font-semibold" />
+        <div className="flex gap-2">
+        {listing.isActive && listing.isFinalized && listing.walrusBlobObjectId && (
+          <ExtendStorageDialog
+            listingId={listing.id}
+            listingTitle={listing.title}
+            sellerCapId={cap.id}
+            walrusBlobObjectId={listing.walrusBlobObjectId}
+            storageEndEpoch={listing.storageEndEpoch}
+          >
+            <Button variant="outline" size="sm">
+              Extend
+            </Button>
+          </ExtendStorageDialog>
+        )}
         {listing.isActive && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -86,6 +110,7 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
             </DialogContent>
           </Dialog>
         )}
+        </div>
       </CardFooter>
     </Card>
   );

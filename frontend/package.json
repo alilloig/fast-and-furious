@@ -13,6 +13,7 @@
     "@mysten/dapp-kit-react": "^2.0.0",
     "@mysten/seal": "^1.1.0",
     "@mysten/sui": "^2.5.1",
+    "@mysten/walrus": "^1.0.3",
     "@nanostores/react": "^1.0.0",
     "@tanstack/react-query": "^5.90.21",
     "class-variance-authority": "^0.7.1",

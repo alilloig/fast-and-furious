@@ -28,6 +28,8 @@ export function parseSkillListing(
     walrusQuiltId: parseOptionString(json.walrus_quilt_id),
     fileNames: (json.file_names as string[]) ?? [],
     sealKeyId: json.seal_key_id as string,
+    walrusBlobObjectId: (json.walrus_blob_object_id as string) ?? "",
+    storageEndEpoch: Number(json.storage_end_epoch ?? 0),
     createdAtEpoch: Number(json.created_at_epoch as string),
     isActive: json.is_active as boolean,
     isFinalized: json.is_finalized as boolean,
