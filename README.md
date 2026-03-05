@@ -8,6 +8,17 @@ A decentralized marketplace for buying and selling AI skills and agents, built o
 
 Sellers encrypt skill files with Seal and store them on Walrus. Buyers purchase on-chain and decrypt client-side. The platform takes a configurable fee enforced entirely by Move smart contracts — no backend server.
 
+## Walrus Blob Deletion on Delist
+
+When a seller delists a skill, they can optionally delete the encrypted content from Walrus in the same transaction. The delist dialog shows a checkbox (checked by default) to "Also delete encrypted content from Walrus."
+
+**How it works:**
+- The Walrus blob delete and the on-chain `skill::delist` Move call are composed into a **single Programmable Transaction Block** — the user signs once, and both operations succeed or fail atomically.
+- Deletion destroys the Sui Blob object and reclaims the WAL storage resource back to the seller.
+- **Blob data is not purged instantly.** Walrus storage nodes continue serving the data until the storage end epoch. After that, it is garbage-collected and becomes inaccessible. This is expected Walrus behavior — deletion prevents renewal and reclaims the storage deposit, but does not immediately erase data from the network.
+
+If the seller unchecks the option, only the delist executes and the blob persists until its storage period expires naturally.
+
 ## Deployed Object IDs (Testnet)
 
 Source of truth: `frontend/.env` and `wooper/Published.toml`

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const epochs = req.nextUrl.searchParams.get("epochs") ?? "5";
   const sendTo = req.nextUrl.searchParams.get("send_object_to") ?? "";
   const body = await req.arrayBuffer();
-  let url = `${WALRUS_PUBLISHER_URL}/v1/blobs?epochs=${epochs}`;
+  let url = `${WALRUS_PUBLISHER_URL}/v1/blobs?epochs=${epochs}&deletable=true`;
   if (sendTo) url += `&send_object_to=${sendTo}`;
   const response = await fetch(url, {
     method: "PUT",
