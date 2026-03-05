@@ -14,6 +14,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { PriceDisplay } from "@/components/skills/price-display";
 import { WalrusScanLink } from "@/components/walrus-scan-link";
 import { StorageStatusBadge } from "@/components/storage-status-badge";
@@ -26,8 +28,11 @@ import type { MyListing } from "@/hooks/use-my-listings";
 export function MyListingCard({ myListing }: { myListing: MyListing }) {
   const { cap, listing } = myListing;
   const [open, setOpen] = useState(false);
+  const [deleteBlob, setDeleteBlob] = useState(true);
   const delistMutation = useDelistSkill();
   const { data: epochInfo } = useWalrusEpoch();
+
+  const canDeleteBlob = !!listing.walrusBlobObjectId;
 
   return (
     <Card className="relative transition-colors hover:bg-accent/50">
@@ -80,7 +85,7 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
           </ExtendStorageDialog>
         )}
         {listing.isActive && (
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) delistMutation.reset(); }}>
             <DialogTrigger asChild>
               <Button variant="destructive" size="sm" className="relative z-10">
                 Delist
@@ -90,10 +95,28 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
               <DialogHeader>
                 <DialogTitle>Delist &ldquo;{listing.title}&rdquo;?</DialogTitle>
                 <DialogDescription>
-                  This will remove the listing from the marketplace. Existing
-                  purchases will still have access to the content.
+                  This will remove the listing from the marketplace.
                 </DialogDescription>
               </DialogHeader>
+              {canDeleteBlob && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="delete-blob"
+                      checked={deleteBlob}
+                      onCheckedChange={(v) => setDeleteBlob(v === true)}
+                    />
+                    <Label htmlFor="delete-blob" className="text-sm font-normal">
+                      Also delete encrypted content from Walrus
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {deleteBlob
+                      ? "Buyers who have not yet downloaded the content will lose access."
+                      : "The encrypted content will remain on Walrus until storage expires."}
+                  </p>
+                </div>
+              )}
               <ErrorAlert error={delistMutation.error instanceof Error ? delistMutation.error : null} />
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(false)}>
@@ -104,7 +127,12 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
                   disabled={delistMutation.isPending}
                   onClick={() =>
                     delistMutation.mutate(
-                      { listingId: listing.id, sellerCapId: cap.id },
+                      {
+                        listingId: listing.id,
+                        sellerCapId: cap.id,
+                        walrusBlobObjectId: canDeleteBlob && deleteBlob ? listing.walrusBlobObjectId : undefined,
+                        deleteBlob: canDeleteBlob && deleteBlob,
+                      },
                       { onSuccess: () => setOpen(false) },
                     )
                   }
