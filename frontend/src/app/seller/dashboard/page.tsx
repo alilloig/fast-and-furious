@@ -13,11 +13,13 @@ import { MyPackageCard } from "@/components/seller/my-package-card";
 import { VaultCard } from "@/components/seller/vault-card";
 import { useMyListings } from "@/hooks/use-my-listings";
 import { useMyPackages } from "@/hooks/use-my-packages";
+import { usePurchaseReceipts } from "@/hooks/use-purchase-receipts";
 
 export default function SellerDashboardPage() {
   const account = useCurrentAccount();
   const { data: myListings, isLoading: listingsLoading } = useMyListings();
   const { data: myPackages, isLoading: packagesLoading } = useMyPackages();
+  const { data: receipts } = usePurchaseReceipts();
 
   if (!account) {
     return (
@@ -68,7 +70,11 @@ export default function SellerDashboardPage() {
           ) : (
             <div className="space-y-4">
               {myListings.map((ml) => (
-                <MyListingCard key={ml.listing.id} myListing={ml} />
+                <MyListingCard
+                  key={ml.listing.id}
+                  myListing={ml}
+                  receipt={receipts?.find((r) => r.skillIds.includes(ml.listing.id))}
+                />
               ))}
             </div>
           )}

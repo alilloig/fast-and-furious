@@ -120,7 +120,7 @@ export default function SkillDetailPage({
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Storage ID</div>
-              <div className="truncate font-mono text-sm">{skill.walrusBlobId}</div>
+              <WalrusScanLink blobId={skill.walrusBlobId} />
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Storage Status</div>
@@ -135,7 +135,14 @@ export default function SkillDetailPage({
 
           <Separator />
 
-          {alreadyPurchased || purchaseSuccess ? (
+          {account && skill.seller === account.address ? (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">Your listing</Badge>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/seller/dashboard">Manage in Dashboard →</Link>
+              </Button>
+            </div>
+          ) : alreadyPurchased || purchaseSuccess ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-green-600">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />

@@ -24,10 +24,16 @@ export function estimateWalrusCost(
     totalRawBytes + files.length * SEAL_ENCRYPTION_OVERHEAD_PER_FILE;
   const encodedBytes =
     encryptedBytes * WALRUS_ENCODING_FACTOR + WALRUS_METADATA_OVERHEAD_BYTES;
-  const encodedSizeMiB = Math.ceil(encodedBytes / (1024 * 1024));
+  // Keep fractional MiB for display — avoid Math.ceil here so sub-MiB files
+  // don't all collapse to the same "1 MiB" bucket.
+  const encodedSizeMiB = encodedBytes / (1024 * 1024);
 
-  const storageFrost =
-    BigInt(encodedSizeMiB) * WALRUS_FROST_PER_MIB_PER_EPOCH * BigInt(epochs);
+  // Compute frost from raw bytes to preserve per-file precision.
+  // WALRUS_FROST_PER_MIB_PER_EPOCH / (1024*1024) gives FROST per byte, but
+  // to avoid floating-point BigInt issues we multiply first then divide.
+  const storageFrost = BigInt(
+    Math.ceil(encodedSizeMiB * Number(WALRUS_FROST_PER_MIB_PER_EPOCH) * epochs),
+  );
   const totalFrost = storageFrost + WALRUS_WRITE_FEE_FROST;
 
   return {

@@ -22,7 +22,10 @@ export function StorageCostEstimate({ estimate }: StorageCostEstimateProps) {
         </span>
         <span className="ml-2 text-xs text-muted-foreground">
           ({estimate.epochs} epoch{estimate.epochs !== 1 ? "s" : ""}, ~
-          {estimate.encodedSizeMiB} MiB encoded)
+          {estimate.encodedSizeMiB < 1
+            ? `${(estimate.encodedSizeMiB * 1024).toFixed(0)} KiB`
+            : `${estimate.encodedSizeMiB.toFixed(2)} MiB`}{" "}
+          encoded)
         </span>
       </div>
       <Tooltip>
@@ -32,7 +35,7 @@ export function StorageCostEstimate({ estimate }: StorageCostEstimateProps) {
         <TooltipContent side="top" className="max-w-xs text-xs">
           <p>
             This is an approximate cost for storing your encrypted files on
-            Walrus. Includes ~5x RedStuff encoding expansion and ~64 MiB
+            Walrus. Includes ~5x RedStuff encoding expansion and ~64 KiB
             metadata overhead.
           </p>
           <p className="mt-1">

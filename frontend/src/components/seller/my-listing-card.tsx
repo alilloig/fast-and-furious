@@ -21,11 +21,13 @@ import { WalrusScanLink } from "@/components/walrus-scan-link";
 import { StorageStatusBadge } from "@/components/storage-status-badge";
 import { ExtendStorageDialog } from "@/components/seller/extend-storage-dialog";
 import { ErrorAlert } from "@/components/error-alert";
+import { DecryptButton } from "@/components/purchases/decrypt-button";
 import { useDelistSkill } from "@/hooks/use-delist-skill";
 import { useWalrusEpoch } from "@/hooks/use-current-epoch";
 import type { MyListing } from "@/hooks/use-my-listings";
+import type { PurchaseReceipt } from "@/lib/types";
 
-export function MyListingCard({ myListing }: { myListing: MyListing }) {
+export function MyListingCard({ myListing, receipt }: { myListing: MyListing; receipt?: PurchaseReceipt }) {
   const { cap, listing } = myListing;
   const [open, setOpen] = useState(false);
   const [deleteBlob, setDeleteBlob] = useState(true);
@@ -71,6 +73,19 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
       <CardFooter className="flex items-center justify-between">
         <PriceDisplay price={listing.price} className="font-semibold" />
         <div className="flex gap-2">
+        {receipt && (
+          <div className="relative z-10">
+            <DecryptButton
+              receiptId={receipt.id}
+              receipt={receipt}
+              skill={listing}
+              walrusBlobId={listing.walrusBlobId}
+              walrusQuiltId={listing.walrusQuiltId}
+              fileNames={listing.fileNames}
+              skillTitle={listing.title}
+            />
+          </div>
+        )}
         {listing.isActive && listing.isFinalized && listing.walrusBlobObjectId && (
           <ExtendStorageDialog
             listingId={listing.id}
@@ -79,7 +94,7 @@ export function MyListingCard({ myListing }: { myListing: MyListing }) {
             walrusBlobObjectId={listing.walrusBlobObjectId}
             storageEndEpoch={listing.storageEndEpoch}
           >
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="relative z-10">
               Extend
             </Button>
           </ExtendStorageDialog>

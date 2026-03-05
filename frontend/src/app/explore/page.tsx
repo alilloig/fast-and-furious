@@ -11,11 +11,13 @@ import {
 } from "@/components/skills/listing-filters";
 import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { EmptyState } from "@/components/empty-state";
+import { useCurrentAccount } from "@mysten/dapp-kit-react";
 import { useListingsRegistry } from "@/hooks/use-listings-registry";
 import { useSkillListings } from "@/hooks/use-skill-listings";
 import { usePackageListings } from "@/hooks/use-package-listings";
 
 export default function ExplorePage() {
+  const account = useCurrentAccount();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [type, setType] = useState<ListingType>("all");
@@ -30,7 +32,7 @@ export default function ExplorePage() {
 
   const filteredSkills = useMemo(() => {
     if (type === "packages") return [];
-    let result = skills ?? [];
+    let result = (skills ?? []).filter((s) => s.seller !== account?.address);
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -47,11 +49,11 @@ export default function ExplorePage() {
     if (sort === "price-desc") result = [...result].sort((a, b) => Number(b.price - a.price));
     if (sort === "newest") result = [...result].sort((a, b) => b.createdAtEpoch - a.createdAtEpoch);
     return result;
-  }, [skills, search, category, type, sort]);
+  }, [skills, search, category, type, sort, account?.address]);
 
   const filteredPackages = useMemo(() => {
     if (type === "skills") return [];
-    let result = packages ?? [];
+    let result = (packages ?? []).filter((p) => p.seller !== account?.address);
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
@@ -64,7 +66,7 @@ export default function ExplorePage() {
     if (sort === "price-desc") result = [...result].sort((a, b) => Number(b.price - a.price));
     if (sort === "newest") result = [...result].sort((a, b) => b.createdAtEpoch - a.createdAtEpoch);
     return result;
-  }, [packages, search, type, sort]);
+  }, [packages, search, type, sort, account?.address]);
 
   const hasResults = filteredSkills.length > 0 || filteredPackages.length > 0;
 
