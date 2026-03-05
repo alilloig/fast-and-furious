@@ -14,10 +14,10 @@ Source of truth: `frontend/.env` and `wooper/Published.toml`
 
 | Object | ID |
 |--------|-----|
-| Package | `0xc1486670f81da6f57615f136cc1834b6a834248489ffeda4471d9841f3b5dab2` |
-| MarketplaceConfig | `0xac695c12a22ff47aee4ca805d24808c12ecae241791c714ae78718c9ab6dc7a0` |
-| PackageVersion | `0x8054603214952289fd107aea1785c8989e7337cc1ea23dd41c49abbf620da23a` |
-| ListingsRegistry | `0x1dcdf97a5542a2a4465e0bd1e019c7f132c9625ed433cd01dcede566819180bf` |
+| Package | `0x9beb306888905b115f532a92e2972c6262e6209b69c063891ebafdbabf332cec` |
+| MarketplaceConfig | `0x794c46601b4ca1b26b90d665f35d6cf47efbeed5df548d1452bfc672cd621c2b` |
+| PackageVersion | `0x534bf0d6d1341c1ff25e616d1523127337e2f3690690590cc0a8b2900dd8f1c1` |
+| ListingsRegistry | `0x8fc2854e2d8218c2f7c780391f1c823e549a0723a43cdb95061f11b451b4fc62` |
 
 ## Quick Start
 

@@ -117,10 +117,10 @@ frontend/                        # Next.js 16 (App Router)
 Source of truth: `frontend/.env` and `wooper/Published.toml`
 
 ```
-Package:           0xbe62edfb176038f2d99ebcb8fedb13869c553faae59a4bf2f7a4c2389eaf9157
-MarketplaceConfig: 0xde82bdfcae5e6fc32a22d3bbc0a04b85df907419c91f471147cc0dc06afe780f
-PackageVersion:    0x7ad00b5433fe0100ad91f7fccd848e84e5220d6ee92932d1fdedb318eab0a3cb
-ListingsRegistry:  0x655e2922d379301ac5e5fc91617b470f4175cbc6e94c6be720ac21de877168fa
+Package:           0x9beb306888905b115f532a92e2972c6262e6209b69c063891ebafdbabf332cec
+MarketplaceConfig: 0x794c46601b4ca1b26b90d665f35d6cf47efbeed5df548d1452bfc672cd621c2b
+PackageVersion:    0x534bf0d6d1341c1ff25e616d1523127337e2f3690690590cc0a8b2900dd8f1c1
+ListingsRegistry:  0x8fc2854e2d8218c2f7c780391f1c823e549a0723a43cdb95061f11b451b4fc62
 ```
 
 Seal key servers: see `frontend/src/lib/constants.ts` (2 servers, threshold 2).
