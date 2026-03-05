@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useCurrentAccount } from "@mysten/dapp-kit-react";
 import { ConnectButton } from "@mysten/dapp-kit-react/ui";
@@ -14,6 +15,7 @@ import { usePackageDetail } from "@/hooks/use-package-detail";
 import { useSkillListings } from "@/hooks/use-skill-listings";
 import { useSellerVault } from "@/hooks/use-seller-vault";
 import { usePurchasePackage } from "@/hooks/use-purchase-package";
+import { usePurchaseReceipts } from "@/hooks/use-purchase-receipts";
 import { truncateAddress, formatSui } from "@/lib/utils";
 
 export default function PackageDetailPage({
@@ -27,7 +29,12 @@ export default function PackageDetailPage({
   const { data: includedSkills } = useSkillListings(pkg?.skillIds ?? []);
   const { data: vaultId, isLoading: vaultLoading } = useSellerVault(pkg?.seller);
   const purchaseMutation = usePurchasePackage();
+  const { data: receipts } = usePurchaseReceipts();
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+
+  const alreadyPurchased = pkg != null && (receipts?.some((r) =>
+    pkg.skillIds.every((sid) => r.skillIds.includes(sid))
+  ) ?? false);
 
   if (isLoading) {
     return (
@@ -118,13 +125,16 @@ export default function PackageDetailPage({
 
           <Separator />
 
-          {purchaseSuccess ? (
+          {alreadyPurchased || purchaseSuccess ? (
             <div className="space-y-2">
-              <p className="text-sm font-medium text-green-600">
-                Purchase successful!
-              </p>
-              <Button asChild variant="outline" size="sm">
-                <Link href="/purchases">View My Purchases</Link>
+              <div className="flex items-center gap-2 text-green-600">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span className="text-sm font-medium">
+                  {purchaseSuccess ? "Purchase successful!" : "You own this bundle"}
+                </span>
+              </div>
+              <Button asChild variant="ghost" size="sm" className="h-auto p-0 text-sm text-muted-foreground hover:text-foreground">
+                <Link href="/purchases">Go to My Purchases →</Link>
               </Button>
             </div>
           ) : !account ? (
